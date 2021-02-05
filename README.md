@@ -24,5 +24,5 @@
 ## License
 Pecab project is licensed under the terms of the Apache License 2.0.
 
-Copyright 2021 [Hyunwoong Ko et al](https://github.com/hyunwoongko). All Rights Reserved.
+Copyright 2021 [Hyunwoong Ko](https://github.com/hyunwoongko). All Rights Reserved.
 
