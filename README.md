@@ -1,4 +1,6 @@
 # Pecab: Pure python mecab analyzer for Korean & Japanese
+[![PyPI version](https://badge.fury.io/py/kocrawl.svg)](https://badge.fury.io/py/pecab)
+![GitHub](https://img.shields.io/github/license/hyunwoongko/pecab/LICENSE)
 
 ... Work in process ...
 
