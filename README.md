@@ -2,7 +2,7 @@
 
 ... Work in process ...
 
-<br><br>
+<br>
 
 ## Citation
 ```
@@ -14,12 +14,18 @@
 }
 ```
 
-<br><br>
+<br>
 
 ## Contributor
 [Hyunwoong Ko](https://github.com/hyunwoongko), [Wonjun Jang](https://github.com/strutive07), [Ilkyu Lee](https://github.com/xxjjvxb) and [Euibeom Son](https://github.com/lainrose)
 
-<br><br>
+<br>
+
+## Reference
+- [mecab](https://github.com/taku910/mecab) by Kudo
+- [python-mecab](https://github.com/jeongukjae/python-mecab) by Ukjae Jeong
+
+<br>
 
 ## License
 Pecab project is licensed under the terms of the Apache License 2.0.
