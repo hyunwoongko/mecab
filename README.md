@@ -17,7 +17,7 @@
 <br><br>
 
 ## Contributor
-[Hyunwoong Ko](https://github.com/hyunwoongko), Wonjun Jang, Ilkyu Lee and Euibeom Son
+[Hyunwoong Ko](https://github.com/hyunwoongko), [Wonjun Jang](https://github.com/strutive07), [Ilkyu Lee](https://github.com/xxjjvxb) and [Euibeom Son](https://github.com/lainrose)
 
 <br><br>
 
