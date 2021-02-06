@@ -15,7 +15,7 @@ setup(
     version='0.0',
     author='Hyunwoong Ko',
     author_email='kevin.woong@kakaobrain.com',
-    url='https://github.com/hyunwoongko/kss',
+    url='https://github.com/hyunwoongko/pecab',
     license='Apache 2.0',
     description='Pure python mecab analyzer for Korean & Japanese',
     long_description_content_type='text/markdown',

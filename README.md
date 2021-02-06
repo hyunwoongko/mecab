@@ -24,7 +24,7 @@
 <br>
 
 ## Reference
-- [mecab](https://github.com/taku910/mecab) by Kudo
+- [mecab](https://github.com/taku910/mecab) by Kudo Taku
 - [python-mecab](https://github.com/jeongukjae/python-mecab) by Ukjae Jeong
 
 <br>
