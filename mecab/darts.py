@@ -11,6 +11,12 @@ ARRAY_DTYPE = np.dtype([('base', ARRAY_DTYPE), ('check', ARRAY_U_DTYPE)])
 
 @dataclass
 class Node:
+    """
+    Node contain trie's left, right node index and it's node depth in trie.
+    code means character code (ord(Character))
+    ex) A -> 65
+    """
+
     code: int
     depth: int
     left: int
@@ -28,12 +34,12 @@ class DoubleArrayTrieSystem:
         self.array: np.ndarray = np.zeros([], dtype=ARRAY_DTYPE)
         self.used: np.ndarray = np.zeros([], dtype=np.bool)
 
-    def resize(self, size):
+    def resize(self, size: int):
         self.array = np.resize(self.array, size)
         self.used = np.resize(self.used, size)
 
-    def build(self, keys, sizes, key_token_sizes):
-        """
+    def build(self, keys: List[str], sizes: List[int], key_token_sizes: List[int]):
+        """ Build trie system.
         Args:
             keys: Strings to register in trie
             sizes: An array that collects the lengths of the elements in the key array
@@ -58,6 +64,13 @@ class DoubleArrayTrieSystem:
         return self.error
 
     def fetch(self, parent: Node, siblings: List[Node]) -> int:
+        """ Extract sibling list in parent's left - right range and convert Character to code
+        Args:
+            parent: trie's parent node
+            siblings: List to store sibling Nodes.
+        Returns:
+            Number of node in siblings
+        """
         if self.error < 0:
             return 0
 
@@ -91,6 +104,15 @@ class DoubleArrayTrieSystem:
         return len(siblings)
 
     def insert(self, siblings: List[Node]) -> int:
+        """ Insert prefetch siblings into parent node.
+        Assign base and check values.
+
+        Args:
+            siblings: Node list to add into trie.
+
+        Returns:
+            node's begin index of double array (self.array)
+        """
         if self.error < 0:
             return 0
 
@@ -168,7 +190,21 @@ class DoubleArrayTrieSystem:
 
         return begin
 
-    def exact_match_search(self, key, size=0, node_pos=0):
+    def exact_match_search(self, key: str, size: int = 0, node_pos: int = 0):
+        """ Find exact match string in trie.
+        Args:
+            key: search key for exact match
+            size: key length.
+            node_pos: root index.
+
+        Returns:
+            dict of str: int
+            {
+                'value': int. input key's number of token
+                'len': int. input key's length
+            }
+
+        """
         if not size:
             size = len(key)
 
@@ -195,7 +231,22 @@ class DoubleArrayTrieSystem:
 
         return result
 
-    def common_prefix_search(self, key, result_len, size=0, node_pos=0):
+    def common_prefix_search(self, key: str, result_len: int, size: int = 0, node_pos: int = 0):
+        """ Find prefix match string in trie.
+        Args:
+            key: search key for exact match
+            result_len: max number of result prefixes
+            size: key length.
+            node_pos: root index.
+
+        Returns:
+            list of dict of str: int
+            [{
+                'value': int. input key's number of token
+                'len': int. input key's length
+            }]
+
+        """
         if not size:
             size = len(key)
 
