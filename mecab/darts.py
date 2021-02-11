@@ -38,7 +38,8 @@ class DoubleArrayTrieSystem:
         self.array = np.resize(self.array, size)
         self.used = np.resize(self.used, size)
 
-    def build(self, keys: List[str], sizes: List[int], key_token_sizes: List[int]):
+    def build(self, keys: List[str], sizes: List[int],
+              key_token_sizes: List[int]):
         """ Build trie system.
         Args:
             keys: Strings to register in trie
@@ -77,13 +78,15 @@ class DoubleArrayTrieSystem:
         prev_character_code = 0
 
         for i in range(parent.left, parent.right):
-            if (self.sizes[i] if self.sizes else len(self.keys[i])) < parent.depth:
+            if (self.sizes[i]
+                    if self.sizes else len(self.keys[i])) < parent.depth:
                 continue
 
             cur_key = self.keys[i]
             cur_character_code = 0
 
-            if (self.sizes[i] if self.sizes else len(self.keys[i])) != parent.depth:
+            if (self.sizes[i]
+                    if self.sizes else len(self.keys[i])) != parent.depth:
                 cur_character_code = ord(cur_key[parent.depth]) + 1
 
             if prev_character_code > cur_character_code:
@@ -91,7 +94,10 @@ class DoubleArrayTrieSystem:
                 return 0
 
             if prev_character_code != cur_character_code or len(siblings) == 0:
-                sibling = Node(code=cur_character_code, depth=parent.depth + 1,left = i, right=-1)
+                sibling = Node(code=cur_character_code,
+                               depth=parent.depth + 1,
+                               left=i,
+                               right=-1)
                 if len(siblings) != 0:
                     siblings[len(siblings) - 1].right = i
                 siblings.append(sibling)
@@ -141,7 +147,9 @@ class DoubleArrayTrieSystem:
             begin = pos - siblings[0].code
 
             if self.array.size <= (begin + siblings[-1].code):
-                self.resize(self.array.size * int(max(1.05, 1.0 * len(self.keys) / (self.progress + 1))))
+                self.resize(
+                    self.array.size *
+                    int(max(1.05, 1.0 * len(self.keys) / (self.progress + 1))))
 
             if self.used[begin]:
                 continue
@@ -176,13 +184,11 @@ class DoubleArrayTrieSystem:
                 self.array[begin + siblings[i].code]['base'] = h
             else:
                 self.array[begin + siblings[i].code]['base'] = (
-                    -self.key_token_sizes[siblings[i].left] - 1
-                    if self.key_token_sizes
-                    else
-                    -siblings[i].left - 1
-                )
+                    -self.key_token_sizes[siblings[i].left] -
+                    1 if self.key_token_sizes else -siblings[i].left - 1)
 
-                if self.key_token_sizes and -self.key_token_sizes[siblings[i].left] - 1 >= 0:
+                if self.key_token_sizes and -self.key_token_sizes[
+                        siblings[i].left] - 1 >= 0:
                     self.error = -2
                     return 0
 
@@ -208,10 +214,7 @@ class DoubleArrayTrieSystem:
         if not size:
             size = len(key)
 
-        result = {
-            'value': -1,
-            'len': 0
-        }
+        result = {'value': -1, 'len': 0}
 
         base: int = self.array[node_pos]['base']
         pointer: int
@@ -231,7 +234,11 @@ class DoubleArrayTrieSystem:
 
         return result
 
-    def common_prefix_search(self, key: str, result_len: int, size: int = 0, node_pos: int = 0):
+    def common_prefix_search(self,
+                             key: str,
+                             result_len: int,
+                             size: int = 0,
+                             node_pos: int = 0):
         """ Find prefix match string in trie.
         Args:
             key: search key for exact match
@@ -279,8 +286,10 @@ class DoubleArrayTrieSystem:
 
 
 if __name__ == "__main__":
-    words = sorted(
-        ["c", "ca", "cat", "cats", "center", "cut", "cute", "do", "dog", "fox", "rat", "rust", "rus", "한글", '한글안녕'])
+    words = sorted([
+        "c", "ca", "cat", "cats", "center", "cut", "cute", "do", "dog", "fox",
+        "rat", "rust", "rus", "한글", '한글안녕'
+    ])
     da = DoubleArrayTrieSystem()
     sizes = [len(word) for word in words]
     tokens = [1 for word in words]
