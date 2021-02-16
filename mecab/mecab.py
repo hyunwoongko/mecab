@@ -74,7 +74,7 @@ class MeCab(object):
             "ja",
             "ko",
             "zh",
-        ], "lang is must be in ['ja', 'ko', 'zh']"
+        ], "lang is must be in ['ja', 'jp', 'ko', 'kr', 'zh', 'cn']"
 
         self.lang = lang
         self.dic = self._load_dict(lang, dic)
@@ -123,10 +123,10 @@ class MeCab(object):
                 except:
                     raise Exception("can not import `wget`. please install wget using `pip install wget`")
 
-                wget.download()
+                wget.download(f"https://github.com/hyunwoongko/pecab/tree/main/dic/{lang}/{dic}.zip")
 
         else:
-
+            pass
 
         return dic
 
@@ -139,3 +139,4 @@ class MeCab(object):
 
 if __name__ == '__main__':
     print(MeCab.pretrained_dicts())
+    tagger = MeCab(lang="ko")
