@@ -9,7 +9,7 @@
 ## Citation
 ```
 @misc{pecab,
-  author       = {Ko, Hyunwoong and Jang, Wonjun and Lee, Ilkyu and Son, Euibeom},
+  author       = {Ko, Hyunwoong and Jang, Wonjun and Son, Euibeom and Park, Jiwoo},
   title        = {Pecab: Pure python mecab analyzer for CJK languages},
   howpublished = {\url{https://github.com/hyunwoongko/pecab}},
   year         = {2021},
@@ -19,7 +19,7 @@
 <br>
 
 ## Contributor
-[Hyunwoong Ko](https://github.com/hyunwoongko), [Wonjun Jang](https://github.com/strutive07), [Ilkyu Lee](https://github.com/xxjjvxb) and [Euibeom Son](https://github.com/lainrose)
+[Hyunwoong Ko](https://github.com/hyunwoongko), [Wonjun Jang](https://github.com/strutive07) and [Euibeom Son](https://github.com/lainrose) and [Park Jiwoo](https://github.com/bernardscumm)
 
 <br>
 
