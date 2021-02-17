@@ -1,3 +1,4 @@
+from ctypes import Structure, c_int, c_uint, sizeof
 from dataclasses import dataclass
 from typing import List
 
@@ -23,6 +24,11 @@ class Node:
     right: int
 
 
+class NodeInCPlusPlusBinary(Structure):
+    _fields_ = [('base', c_int),
+                ('check', c_uint)]
+
+
 class DoubleArrayTrieSystem:
     def __init__(self):
         self.keys: List[str] = []
@@ -38,6 +44,38 @@ class DoubleArrayTrieSystem:
         self.array = np.resize(self.array, size)
         self.used = np.resize(self.used, size)
 
+    def decompose_string_to_utf8(self, string):
+        """Decompose String to hex values
+
+        Examples:
+            Input: 'a한국어'
+            Output: [99, 237, 149, 156, 234, 181, 173, 236, 150, 180]
+
+        Args:
+            string: string to decompose
+
+        Returns:
+            string's integer codes
+        """
+        return [char for char in string]
+
+    def load_c_binary(self, binary_path: str) -> np.ndarray:
+        """Load C++ style darts binary to python
+
+        Args:
+            binary_path: binary file path to load
+
+        Returns:
+            darts array in python
+        """
+        with open(binary_path, 'rb') as f:
+            result = []
+            x = NodeInCPlusPlusBinary()
+            while f.readinto(x) == sizeof(x):
+                result.append([x.base, x.check])
+        result = np.asarray(result, dtype=ARRAY_DTYPE)
+        return result
+
     def build(self, keys: List[str], sizes: List[int],
               key_token_sizes: List[int]):
         """ Build trie system.
@@ -49,7 +87,7 @@ class DoubleArrayTrieSystem:
         Returns:
             error: Indicate build successfully finished. If this value is non-zero, build is failed.
         """
-        self.keys = keys
+        self.keys = [self.decompose_string(key) for key in keys]
         self.sizes = sizes
         self.key_token_sizes = key_token_sizes
         self.progress = 0
