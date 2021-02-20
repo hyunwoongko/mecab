@@ -4,8 +4,11 @@ Copyright(C) 2021 Hyunwoong Ko. All right reserved.
 """
 
 import os
+import logging
 
+root_path = os.path.expanduser('~')
 lang_synonym = {"kr": "ko", "cn": "zh", "jp": "ja"}
+pretrained_hub = "https://github.com/hyunwoongko/pecab/raw/main/dic"
 
 
 class MeCab(object):
@@ -78,6 +81,7 @@ class MeCab(object):
 
         self.lang = lang
         self.dic = self._load_dict(lang, dic)
+        self.dic_path = None
 
     @staticmethod
     def pretrained_dicts():
@@ -93,37 +97,51 @@ class MeCab(object):
 
         Args:
             lang (str): language code (e.g. 'ja', 'ko', 'zh')
-            dic (stR):
+            dic (str): dictionary code (e.g. "default", specified_name, user_dict_path)
 
         Returns:
+            (str) dictionary path
 
         """
+
         use_pretrain = False
 
         if dic == "default":
             dic = self.pretrained_dicts()[lang][0]
-            dic = f"/root/.pecab/{dic}"
+            dic_path = os.path.join(root_path, ".pecab", dic)
             use_pretrain = True
             # load default pretrained dictionary
 
         else:
             if dic in self.pretrained_dicts()[lang]:
-                dic = f"/root/.pecab/{dic}"
+                dic_path = os.path.join(root_path, ".pecab", dic)
                 use_pretrain = True
                 # load another specified pretrained dictionary
 
             else:
+                dic_path = dic
                 use_pretrain = False
 
         if use_pretrain:
+            if not os.path.exists(dic_path):
+                logging.info("download pretrained dictionary ...")
 
-            if not os.path.exists(dic):
+                os.makedirs(
+                    name=os.path.join(root_path, ".pecab"),
+                    exist_ok=True,
+                )
+
                 try:
                     import wget
                 except:
-                    raise Exception("can not import `wget`. please install wget using `pip install wget`")
+                    raise Exception(
+                        "can not import `wget`. please install wget using `pip install wget`"
+                    )
 
-                wget.download(f"https://github.com/hyunwoongko/pecab/tree/main/dic/{lang}/{dic}.zip")
+                wget.download(
+                    url=f"{pretrained_hub}/{lang}/{dic}.zip",
+                    out=f"{dic_path}.zip",
+                )
 
         else:
             pass
