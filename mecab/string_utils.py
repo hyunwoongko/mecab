@@ -96,3 +96,42 @@ def getEscapedChar(p):
 
 def tokenize(string, delimiter):
     return string.split(delimiter)
+
+
+def escape_csv_element(text):
+    if text.find(',') != -1 or text.find('"') != -1:
+        tmp = '\'"'
+
+        double_quotes_cnt = text.count('"')
+
+        tmp += '"' * double_quotes_cnt
+        tmp += '"' * len(text)
+        tmp += '"'
+
+    return tmp
+
+
+bar = "###########################################"
+scale = len(bar) - 1
+prev = 0
+
+
+def progress_bar(message, current, total):
+    global bar
+    global scale
+    global prev
+
+    cur_percentage = int(100.0 * current / total)
+    bar_len = int(1.0 * current * scale / total)
+
+    if prev != cur_percentage:
+        print(f'{message}: {cur_percentage:>3}%% |%.{int(bar_len)}{bar}%{int(scale - bar_len)}{""}|')
+
+    if cur_percentage == 100:
+        print("\n")
+    else:
+        print("\r")
+
+    prev = cur_percentage
+
+    return 1
