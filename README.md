@@ -19,7 +19,7 @@
 <br>
 
 ## Contributor
-[Hyunwoong Ko](https://github.com/hyunwoongko), [Wonjun Jang](https://github.com/strutive07), [Euibeom Son](https://github.com/lainrose) and [Mingu Kang](minqukanq)
+[Hyunwoong Ko](https://github.com/hyunwoongko), [Wonjun Jang](https://github.com/strutive07), [Euibeom Son](https://github.com/lainrose) and [Mingu Kang](https://github.com/minqukanq)
 
 <br>
 
