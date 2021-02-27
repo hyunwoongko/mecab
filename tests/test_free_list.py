@@ -9,9 +9,10 @@ class TestFreeList(unittest.TestCase):
     def test_generator(self):
         free_list = FreeList(int, size=4)
         print(free_list)
-        output_of_alloc = free_list.alloc()
+        o = free_list.alloc()
         print(free_list)
-        print(output_of_alloc)
+        print(o)
+
 
 if __name__ == '__main__':
     test = TestFreeList()

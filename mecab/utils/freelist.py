@@ -28,8 +28,9 @@ class FreeList(object):
             self.free_list.append([self.type()] * self.size)
             # freeList.push_back(new T[size]);
 
+        obj = self.free_list[self.li_][self.pi_]
         self.pi_ += 1
-        return self.free_list[self.li_][self.pi_]
+        return obj
         # return freeList[li_] + (pi_++);
 
     def __repr__(self):
