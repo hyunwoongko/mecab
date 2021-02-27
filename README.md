@@ -2,7 +2,7 @@
 [![PyPI version](https://badge.fury.io/py/pecab.svg)](https://badge.fury.io/py/pecab)
 ![GitHub](https://img.shields.io/github/license/hyunwoongko/pecab)
 
-... Work in process ...
+.... Work in process ....
 
 <br>
 
