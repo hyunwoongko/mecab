@@ -31,12 +31,13 @@ class NodeInCPlusPlusBinary(Structure):
 
 class DoubleArrayTrieSystem:
     def __init__(self):
-        self.keys: List[str] = []
+        self.keys: List[List[int]] = []
         self.sizes: List[int] = []
         self.key_token_sizes: List[int] = []
         self.error: int = 0
         self.next_check_pos: int = 0
         self.progress: int = 0
+        self.size_ = 0
         self.array: np.ndarray = np.zeros([], dtype=ARRAY_DTYPE)
         self.used: np.ndarray = np.zeros([], dtype=np.bool)
 
@@ -57,7 +58,7 @@ class DoubleArrayTrieSystem:
         Returns:
             string's integer codes
         """
-        return [char for char in string]
+        return [char for char in string.encode('utf-8')]
 
     def load_c_binary(self, binary_path: str) -> np.ndarray:
         """Load C++ style darts binary to python
@@ -72,7 +73,7 @@ class DoubleArrayTrieSystem:
             result = []
             x = NodeInCPlusPlusBinary()
             while f.readinto(x) == sizeof(x):
-                result.append([x.base, x.check])
+                result.append((x.base, x.check))
         result = np.asarray(result, dtype=ARRAY_DTYPE)
         return result
 
@@ -87,8 +88,8 @@ class DoubleArrayTrieSystem:
         Returns:
             error: Indicate build successfully finished. If this value is non-zero, build is failed.
         """
-        self.keys = [self.decompose_string(key) for key in keys]
-        self.sizes = sizes
+        self.keys = [self.decompose_string_to_utf8(key) for key in keys]
+        self.sizes = [len(k) for k in self.keys]
         self.key_token_sizes = key_token_sizes
         self.progress = 0
         self.resize(8192)
@@ -99,6 +100,14 @@ class DoubleArrayTrieSystem:
         siblings = []
         self.fetch(root_node, siblings)
         self.insert(siblings)
+
+        self.size_ += (1 << 8) + 1
+
+        if self.size_ >= self.array.size:
+            self.resize(self.size_)
+
+        del self.used
+        self.used = None
 
         return self.error
 
@@ -125,7 +134,7 @@ class DoubleArrayTrieSystem:
 
             if (self.sizes[i]
                     if self.sizes else len(self.keys[i])) != parent.depth:
-                cur_character_code = ord(cur_key[parent.depth]) + 1
+                cur_character_code = cur_key[parent.depth] + 1
 
             if prev_character_code > cur_character_code:
                 self.error = -3
@@ -210,6 +219,7 @@ class DoubleArrayTrieSystem:
             self.next_check_pos = pos
 
         self.used[begin] = True
+        self.size_ = max(self.size_, begin + siblings[-1].code + 1)
 
         for i in range(0, len(siblings)):
             self.array[begin + siblings[i].code]['check'] = begin
@@ -249,6 +259,7 @@ class DoubleArrayTrieSystem:
             }
 
         """
+        key = self.decompose_string_to_utf8(key)
         if not size:
             size = len(key)
 
@@ -258,7 +269,7 @@ class DoubleArrayTrieSystem:
         pointer: int
 
         for i in range(0, size):
-            pointer = base + ord(key[i]) + 1
+            pointer = base + key[i] + 1
             if base == self.array[pointer]['check']:
                 base = self.array[pointer]['base']
             else:
@@ -292,6 +303,7 @@ class DoubleArrayTrieSystem:
             }]
 
         """
+        key = self.decompose_string_to_utf8(key)
         if not size:
             size = len(key)
 
@@ -307,7 +319,7 @@ class DoubleArrayTrieSystem:
                 if len(results) < result_len:
                     results.append({'value': -value - 1, 'len': i})
 
-            pointer = base + ord(key[i]) + 1
+            pointer = base + key[i] + 1
             if base == self.array[pointer]['check']:
                 base = self.array[pointer]['base']
             else:
@@ -324,16 +336,40 @@ class DoubleArrayTrieSystem:
 
 
 if __name__ == "__main__":
-    words = sorted([
-        "c", "ca", "cat", "cats", "center", "cut", "cute", "do", "dog", "fox",
-        "rat", "rust", "rus", "한글", '한글안녕'
-    ])
     da = DoubleArrayTrieSystem()
-    sizes = [len(word) for word in words]
-    tokens = [1 for word in words]
-    tokens[-1] = 2
-    da.build(words, sizes, tokens)
-    print(da.exact_match_search('cat'))
-    print(da.exact_match_search('한글'))
-    print(da.exact_match_search('영어'))
-    print(da.common_prefix_search('한글안녕', 10))
+    c_array = da.load_c_binary('test/mecab/build/output.bin')
+    dic = [
+        ('cat', 'c'),
+        ('cat', 'a'),
+        ('cat', 't'),
+        ('car', 'ca'),
+        ('car', 'r'),
+        ('한국어', '한국'),
+        ('한국어', '어')
+    ]
+    dic.sort()
+
+    bsize = 0
+    idx = 0
+
+    prev = None
+    str_list = []
+    len_list = []
+    val_list = []
+
+    for i in range(0, len(dic)):
+        if i != 0 and prev != dic[i][0]:
+            str_list.append(dic[idx][0])
+            len_list.append(len(dic[idx][0]))
+            val_list.append(bsize + (idx << 8))
+            bsize = 1
+            idx = i
+        else:
+            bsize += 1
+        prev = dic[i][0]
+
+    str_list.append(dic[idx][0])
+    len_list.append(len(dic[idx][0]))
+    val_list.append(bsize + (idx << 8))
+
+    da.build(str_list, len_list, val_list)
