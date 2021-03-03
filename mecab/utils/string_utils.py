@@ -68,11 +68,11 @@ def decode_charset(charset):
     elif tmp == "utf16be" or tmp == "utf_16be" or tmp == "utf-16be":
         return EncodingType.UTF16BE
     elif tmp == "utf16le" or tmp == "utf_16le" or tmp == "utf-16le":
-        return EncodingType.UTF16LE;
+        return EncodingType.UTF16LE
     elif tmp == "ascii":
-        return EncodingType.ASCII;
+        return EncodingType.ASCII
     else:
-        return EncodingType.UTF8;
+        return EncodingType.UTF8
 
 
 def getEscapedChar(p):
@@ -99,6 +99,7 @@ def tokenize(string, delimiter):
 
 
 def escape_csv_element(text):
+    tmp = ""
     if text.find(',') != -1 or text.find('"') != -1:
         tmp = '\'"'
 
