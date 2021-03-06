@@ -1,5 +1,5 @@
 """
-Pecab: Pure python mecab analyzer for CJK languages
+Pecab: Pure python mecab analyzer for Japanese and Korean.
 Copyright(C) 2021 Hyunwoong Ko. All right reserved.
 """
 
@@ -7,7 +7,7 @@ import os
 import logging
 
 root_path = os.path.expanduser('~')
-lang_synonym = {"kr": "ko", "cn": "zh", "jp": "ja"}
+lang_synonym = {"kr": "ko", "jp": "ja"}
 pretrained_hub = "https://github.com/hyunwoongko/pecab/raw/main/dic"
 
 
@@ -38,24 +38,22 @@ class MeCab(object):
 
               >>> # check pretrained model names
               >>> MeCab.pretrained_dicts()
-              {'ja': ['IPA', 'Juman', 'Unidic'], 'ko': ['mecab-ko-dic'], 'zh': ['mecab-chinese']}
+              {'ja': ['ipadic', 'jumandic'], 'ko': ['mecab-ko-dic']}
 
               >>> # load Japanese default tagger
               >>> tagger = MeCab(lang="ja")
 
               >>> # load Japanese tagger by specifying dictionary.
-              >>> tagger = MeCab(lang="ja", dic="Juman")
+              >>> tagger = MeCab(lang="ja", dic="jumandic")
 
               >>> # load Japanese tagger using user own dictionary.
               >>> tagger = MeCab(lang="ja", dic="/path/to/dic")
 
-              >>> # load Korean or Chinese tagger by modifying argument `lang`
+              >>> # load Korean tagger by modifying argument `lang`
               >>> ko_tagger = MeCab(lang="ko")
-              >>> zh_tagger = MeCab(lang="zh")
 
               >>> # argument `dic` works the same for all languages.
               >>> ko_tagger = MeCab(lang="ko", dic="path/to/dic")
-              >>> zh_tagger = MeCab(lang="zh", dic="path/to/dic")
 
         References:
             - MeCab: Yet Another Part-of-Speech and Morphological Analyzer
@@ -76,8 +74,7 @@ class MeCab(object):
         assert lang in [
             "ja",
             "ko",
-            "zh",
-        ], "lang is must be in ['ja', 'jp', 'ko', 'kr', 'zh', 'cn']"
+        ], "lang is must be in ['ja', 'jp', 'ko', 'kr']"
 
         self.lang = lang
         self.dic = self._load_dict(lang, dic)
@@ -86,9 +83,8 @@ class MeCab(object):
     @staticmethod
     def pretrained_dicts():
         return {
-            "ja": ["IPA", "Juman", "Unidic"],
+            "ja": ["ipadic", "jumandic"],
             "ko": ["mecab-ko-dic"],
-            "zh": ["mecab-chinese"]
         }
 
     def _load_dict(self, lang: str, dic: str):
@@ -96,15 +92,13 @@ class MeCab(object):
         load or download mecab dictionary
 
         Args:
-            lang (str): language code (e.g. 'ja', 'ko', 'zh')
+            lang (str): language code (e.g. 'ja', 'ko')
             dic (str): dictionary code (e.g. "default", specified_name, user_dict_path)
 
         Returns:
             (str) dictionary path
 
         """
-
-        use_pretrain = False
 
         if dic == "default":
             dic = self.pretrained_dicts()[lang][0]
@@ -144,7 +138,9 @@ class MeCab(object):
                 )
 
         else:
-            pass
+            """
+            load dictionary.
+            """
 
         return dic
 
