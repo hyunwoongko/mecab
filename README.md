@@ -1,4 +1,4 @@
-# Pecab: Pure python mecab analyzer for CJK languages
+# Pecab: Pure python mecab analyzer for Japanese and Korean
 [![PyPI version](https://badge.fury.io/py/pecab.svg)](https://badge.fury.io/py/pecab)
 ![GitHub](https://img.shields.io/github/license/hyunwoongko/pecab)
 
@@ -10,7 +10,7 @@
 ```
 @misc{pecab,
   author       = {Ko, Hyunwoong and Jang, Wonjun and Son, Euibeom and Kang, Mingu},
-  title        = {Pecab: Pure python mecab analyzer for CJK languages},
+  title        = {Pecab: Pure python mecab analyzer for Japanese and Korean},
   howpublished = {\url{https://github.com/hyunwoongko/pecab}},
   year         = {2021},
 }

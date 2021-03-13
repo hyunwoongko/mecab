@@ -5,6 +5,7 @@ Copyright(C) 2021 Hyunwoong Ko. All right reserved.
 
 import os
 import logging
+from typing import Dict, List
 
 root_path = os.path.expanduser('~')
 lang_synonym = {"kr": "ko", "jp": "ja"}
@@ -19,7 +20,7 @@ class MeCab(object):
         dic: str = "default",
     ) -> None:
         """
-        Pecab: Pure python mecab analyzer for CJK languages
+        Pecab: Pure python mecab analyzer for Japanese and Korean.
 
         Args:
             lang (str): language code
@@ -74,14 +75,14 @@ class MeCab(object):
         assert lang in [
             "ja",
             "ko",
-        ], "lang is must be in ['ja', 'jp', 'ko', 'kr']"
+        ], "lang is must be one of ['ja', 'jp', 'ko', 'kr']"
 
         self.lang = lang
         self.dic = self._load_dict(lang, dic)
         self.dic_path = None
 
     @staticmethod
-    def pretrained_dicts():
+    def pretrained_dicts() -> Dict[str, List[str]]:
         return {
             "ja": ["ipadic", "jumandic"],
             "ko": ["mecab-ko-dic"],
@@ -144,10 +145,10 @@ class MeCab(object):
 
         return dic
 
-    def parse(self, text):
+    def parse(self, text: str):
         pass
 
-    def morphs(self, text):
+    def morphs(self, text: str):
         pass
 
 
