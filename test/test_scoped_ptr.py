@@ -1,7 +1,7 @@
-from mecab.scoped_ptr import scoped_ptr
-from mecab.scoped_ptr import scoped_string
-from mecab.scoped_ptr import scoped_array
-from mecab.scoped_ptr import scoped_fixed_array
+from mecab.utils.scoped_ptr import ScopedPtr
+from mecab.utils.scoped_ptr import ScopedString
+from mecab.utils.scoped_ptr import ScopedArray
+from mecab.utils.scoped_ptr import ScopedFixedArray
 
 
 class foo:
@@ -14,8 +14,8 @@ class foo:
 
 if __name__ == '__main__':
     # scored_ptr-----------
-    a = scoped_ptr(11111)
-    ptr = scoped_ptr()
+    a = ScopedPtr(11111)
+    ptr = ScopedPtr()
 
     ptr.reset(a)
     ptr.get().data = 22222
@@ -35,14 +35,14 @@ if __name__ == '__main__':
     print(ptr.get().data)
     print(a.data)
 
-    b = scoped_ptr(foo())
+    b = ScopedPtr(foo())
     ptr.reset(b)
 
     ptr.get().data.print()
 
     # scored_string-----------
-    str1 = scoped_string("origin")
-    str2 = scoped_string()
+    str1 = ScopedString("origin")
+    str2 = ScopedString()
     str2.reset_string(str1)
 
     print(str1.data)
@@ -61,10 +61,10 @@ if __name__ == '__main__':
         print("str2 is None")
 
     # scored_array-----------
-    array = scoped_array()
-    q = scoped_ptr(1)
-    w = scoped_ptr(2)
-    e = scoped_ptr(3)
+    array = ScopedArray()
+    q = ScopedPtr(1)
+    w = ScopedPtr(2)
+    e = ScopedPtr(3)
     array.append(q)
     array.append(w)
     array.append(e)
@@ -79,6 +79,6 @@ if __name__ == '__main__':
     print(q.data, w.data, e.data)
 
     # scored_fixed_array-----------
-    fixed_array = scoped_fixed_array(5)
+    fixed_array = ScopedFixedArray(5)
     print(fixed_array.get())
     # fixed_array.append(scoped_ptr(1))

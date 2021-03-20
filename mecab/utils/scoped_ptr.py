@@ -2,7 +2,7 @@ from collections import deque, UserList
 import ctypes
 
 
-class scoped_ptr:
+class ScopedPtr:
     """
     "scoped_ptr<param> ptr"은 scoped_ptr ptr로 사용한다.
 
@@ -40,15 +40,15 @@ class scoped_ptr:
         return self.__next[0]
 
 
-class scoped_array:
+class ScopedArray:
     __array = []
 
     def __init__(self):
         pass
 
     def append(self, data):
-        if str(type(data)) != "<class 'mecab.scoped_ptr.scoped_ptr'>":
-            raise Exception('append failed. Please put only scored_ptr type')
+        if str(type(data)) != "<class 'mecab.utils.scoped_ptr.ScopedPtr'>":
+            raise Exception('append failed. Please put only ScoredPtr type')
 
         self.__array.append(data)
 
@@ -56,7 +56,7 @@ class scoped_array:
         return self.__array
 
 
-class scoped_fixed_array(UserList):
+class ScopedFixedArray(UserList):
     __size: int
 
     def __init__(self, size: int):
@@ -73,7 +73,7 @@ class scoped_fixed_array(UserList):
         return self.__size
 
 
-class scoped_string(scoped_ptr):
+class ScopedString(ScopedPtr):
     # scoped_fixed_array<data_type, size>
     # -> array = scoped_fixed_array(size)
 
