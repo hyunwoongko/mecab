@@ -22,16 +22,16 @@ class Iconv:
     __to = ''
 
     def open(self, _from, to):
-        __from = decodeCharsetForIconv(_from)
-        __to = decodeCharsetForIconv(to)
+        self.__from = decodeCharsetForIconv(_from)
+        self.__to = decodeCharsetForIconv(to)
 
         return True
 
     def convert(self, string):
         if not string:
-            return True
+            return {True, ''}
 
         if self.__from == '' or self.__to == '':
-            return True
+            return {True, ''}
 
         return {True, string.decode(self.__from).encode(self.__to)}
