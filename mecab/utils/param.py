@@ -1,106 +1,152 @@
+import argparse
 from dataclasses import dataclass
-from enum import Enum
-from typing import List, Dict
-
-from mecab.common import CHECK_FALSE, COPYRIGHT, PACKAGE, VERSION
+from typing import List, Union
+from mecab.common import PACKAGE, VERSION
 
 
 @dataclass
 class Option:
-    option_name: str
-    short_option: str
+    option_name: str  # e.g. help
+    short_option: str  # e.g. h
     default_value: str
-    arg_name: str
+    arg_name: Union[str, type]  # argument type e.g. int, float, ...
     description: str
 
 
 defaultOptions = [
-    Option("help", "h", "", "", "print help message and exit"),
-    Option("version", "v", "", "", "print version and exit")
+    Option("version", "v", f"{PACKAGE} of {VERSION}\n", "", "print version and exit")
 ]
-
-
-def get_length_of_option(option: Option) -> int:
-    if len(option.arg_name) == 0:
-        # +1 : space between displayname and description
-        return len(option.option_name) + 1
-
-    # space between displayname and description
-    # '=' character
-    return len(option.option_name) + len(option.arg_name) + 2
-
-
-def get_default_option():
-    return None
-
-
-def get_default_value() -> str:
-    return ""
-
-
-def cast_string(arg):
-    return arg
-
-
-class ParamError(Enum):
-    UNRECOGNIZED: int = 1
-    REQUIRE_ARG: int = 2
-    NO_ARG: int = 3
-
-
-def print_arg_error(error, option) -> bool:
-    if error == ParamError.UNRECOGNIZED:
-        CHECK_FALSE(False, f"unrecognized option `{option}`")
-    elif error == ParamError.REQUIRE_ARG:
-        CHECK_FALSE(False, f"`{option}` requires an argument")
-    elif error == ParamError.NO_ARG:
-        CHECK_FALSE(False, f"`{option}` doesn't allow an argument")
-    return False
 
 
 class Param(object):
     command_name: str
     help_message: str
-    version_message: str
-    rest_parameters: List[str]
-    configurations: Dict[str, str]
+    version_message: str = f"{PACKAGE} of {VERSION}\n"
+    rest_parameters = []
+    configurations = {}
 
-    def _construct_help_and_version_message(
-        self,
-        options: List[Option],
-    ) -> None:
-        length_of_options: List[int] = []
+    def parse(self, argv: List[str] = None, options: List[Option] = None):
+        # argc is meaningless in python.
+        # so please use only this method not `parse(argc, argv, options)`.
+        # we don't need to override method because it is useless.
+
+        arguments: List[str] = []
+
+        for arg in argv:
+            if arg[-3:] != ".py":
+                arguments.append(arg)
+
+        parser = argparse.ArgumentParser()
+        options = defaultOptions + options
 
         for option in options:
-            option_len = get_length_of_option(option)
-            length_of_options.append(option_len)
+            parser.add_argument(
+                f"-{option.short_option}",
+                f"--{option.option_name}",
+                default=option.default_value,
+                help=option.description,
+                type=option.arg_name if isinstance(option.arg_name, type) else str,
+            )
 
-        max_display_length = max(length_of_options)
-        self.help_message = COPYRIGHT + "\nUsage: " + self.command_name + " [options] files\n"
-        self.version_message = PACKAGE + " of " + VERSION + '\n'
+        parser.add_argument('rest', nargs='*')
+        parsed = parser.parse_args(arguments)
 
-        for option in options:
-            length = 0
-            self.help_message += " -"
-            self.help_message += option.short_option[0]
-            self.help_message += f", -- {option.option_name}"
+        self.configurations = vars(parsed)
+        self.rest_parameters = self.configurations["rest"]
+        self.configurations.pop("rest")
+        self.help_message = parser.format_help()
+        self.command_name = arguments[0]
 
-            if option.arg_name and len(option.arg_name) != 0:
-                self.help_message += f"={option.arg_name}"
-                length += len(option.arg_name) + 1
+    def get(self, name):
+        return self.configurations[name]
 
-            self.help_message += ' ' * (max_display_length - length)
-            self.help_message += option.description + "\n"
+    def set(self, key: str, value, override: bool = True) -> None:
+        if key in self.configurations:
+            if override:
+                self.configurations[key] = value
+        else:
+            self.configurations[key] = value
 
-    def _set_default_value(self, options: List[Option]):
-        for option in options:
-            if option.default_value and len(option.default_value) != 0:
-                self.configurations[option.option_name] = option.default_value
+    def parse_file(self, filename: str) -> bool:
+        lines = open(filename, mode="r", encoding="utf-8").read().splitlines()
 
-    def clear(self):
-        self.configurations.clear()
-        self.rest_parameters.clear()
+        for line in lines:
+            if len(line) == 0 or line[0] == ";" or line[0] == "#":
+                continue
 
-    def parse(self):
-        # argParser 사용 예정
-        pass
+            if "=" not in line:
+                raise Exception(f"format error: {line}")
+
+            split_by_equal_mark = line.split("=")
+            assert len(split_by_equal_mark) == 2, \
+                f"format error: {line}, must be 'key=value'"
+
+            key, val = split_by_equal_mark[0], split_by_equal_mark[1]
+            key, val = key.replace("\t\v", ""), val.replace("\t\v", "")
+            self.set(key, val)
+
+        return True
+
+    def get_rest_parameters(self) -> List[str]:
+        return self.rest_parameters
+
+    def get_version_message(self) -> str:
+        return self.version_message
+
+    def get_help_message(self) -> str:
+        return self.help_message
+
+    def get_command_name(self) -> str:
+        return self.command_name
+
+    def clear(self) -> None:
+        self.configurations = {}
+        self.rest_parameters = []
+
+
+if __name__ == '__main__':
+    """HOW TO USE?"""
+
+    param = Param()
+    options = [
+        Option("chicken", "c", "", "", "치킨"),
+        Option("beverage", "b", "", "", "음료"),
+        Option("price", "p", "", int, "가격"),
+        Option("number", "n", "1", int, "개수")
+    ]
+
+    param.parse(
+        argv=[
+            "--chicken=kfc",
+            "--beverage=coke",
+            "--price=10000",
+            "dunkin",  # rest parameters
+            "starbucks"  # rest parameters
+        ],
+        options=options
+    )
+
+    chicken = param.get("chicken")
+    print(chicken, type(chicken))  # kfc, <class 'str'>
+
+    number = param.get("number")
+    print(number, type(number))  # 1 (default value), <class 'int'>
+
+    rest = param.rest_parameters
+    print(rest)  # [dunkin, starbucks]
+
+    param.get_version_message()
+    param.get_help_message()
+    param.get_command_name()
+
+    param.set("chicken", "bbq", override=True)
+    chicken = param.get("chicken")
+    print(chicken)  # bbq
+
+    param.set("chicken", "bbq", override=False)
+    chicken = param.get("chicken")
+    print(chicken)  # bbq (because override is False)
+
+    param.set("burger", "mcdonald")
+    burger = param.get("burger")
+    print(burger)  # mcdonald
