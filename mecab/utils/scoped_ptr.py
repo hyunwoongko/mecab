@@ -43,8 +43,9 @@ class ScopedPtr:
 class ScopedArray:
     __array = []
 
-    def __init__(self):
-        pass
+    def __init__(self, type_: type, size: int):
+        self.type = type_
+        self.__array = [None for _ in range(size)]
 
     def append(self, data):
         if str(type(data)) != "<class 'mecab.utils.scoped_ptr.ScopedPtr'>":
