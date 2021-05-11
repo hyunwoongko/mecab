@@ -1,9 +1,14 @@
 import math
 import sys
-from typing import List
+from typing import List, Tuple
 
+from mecab.common import CHECK_FALSE
 from mecab.data_structure import Node, RequestType, BoundaryConstraintType
+from mecab.utils.scoped_ptr import ScopedArray
+from mecab.lattice import Lattice
 from mecab.utils import logsumexp
+from mecab.tokenizer import Tokenizer
+from mecab.connector import Connector
 # 있다고 가정하고 구현
 
 
@@ -88,9 +93,49 @@ class Viterbi:
         self.tokenizer_ = None
         self.connector_ = None
         self.cost_factor_ = None
+        # 아직 구현 안된 부분이 많아서 일단 이렇게 해놓음.
+        # 나중에 토크나이저와 커넥터 등이 구현되면 구현해놓을 예정.
 
-    def open(self):
-        pass
+    def open_(self, param):
+        return self.open(
+            param.get("dicdir"),
+            param.get("userdic"),
+            param.get("bos-feature"),
+            param.get("unk-feature"),
+            param.get("max-grouping-size"),
+            param.get("cost-factor"),
+        )
+
+    def open(
+        self,
+        dicdir,
+        userdic,
+        bos_feature,
+        unk_feature,
+        max_grouping_size,
+        cost_factor,
+    ):
+        self.tokenizer_.reset(Tokenizer())
+        CHECK_FALSE(
+            self.tokenizer_.open(dicdir, userdic, bos_feature, unk_feature,
+                                 max_grouping_size), "")
+        CHECK_FALSE(self.tokenizer_.dictionary_info(), "Dictionary is empty")
+
+        self.connector_.reset(Connector())
+        CHECK_FALSE(self.connector_.open(dicdir), "")
+        CHECK_FALSE(
+            self.tokenizer_.dictionary_info().lsize
+            == self.connector_.left_size() and
+            self.tokenizer_.dictionary_info().rsize
+            == self.connector_.right_size(),
+            "Transition table and dictionary are not compatible",
+        )
+
+        self.cost_factor_ = cost_factor
+        if self.cost_factor_ == 0:
+            self.cost_factor_ = 800
+
+        return True
 
     def analyze(self, lattice):
         if not lattice or not lattice.sentence():
@@ -260,3 +305,83 @@ class Viterbi:
         allocator = lattice.allocator()
         str_ = allocator.partial_buffer(lattice.size() + 1)
         str_ = lattice.sentence()[:lattice.size() + 1]
+
+        lines: List[str] = []
+        lsize = tokenize(str_, "\n", lines, lattice.size() + 1)
+        # https://github.com/jeongukjae/python-mecab/blob/master/include/mecab/viterbi.h#L270
+        # std::back_inserter(lines) 넘기는 방식이 파이썬에서 무슨 의미 있는지 모르겠음.
+        # 그냥 레퍼런스만 넘겨주게끔 구현했음. 나중에 문제 생기면 말씀해주세용
+
+        column: List[str] = []
+        buf = ScopedArray(type_=str, size=lattice.size() + 1)
+
+        tokens: List[Tuple[str, str]] = []
+        # https://github.com/jeongukjae/python-mecab/blob/master/include/mecab/viterbi.h#L276
+        # tokens.reverse(lsize) <-- 왜 하는건지 모르겠음.
+
+        pos = 0
+        os_ = ""
+        for i in range(lsize):
+            size = tokenize(lines[1], "t", column, 2)
+            if size == 1 and column[0] == "EOS":
+                break
+            len_ = len(column[0])
+            if size == 2:
+                tokens.append((column[0], column[1]))
+            else:
+                tokens.append((column[0], "0"))
+
+            os_ += column[0]
+            pos += len_
+
+        # os_ += "\0"
+        # 필요 없을듯?
+
+        lattice.set_sentence(os_)
+        pos = 0
+
+        for i in range(len(tokens)):
+            surface = tokens[i][0]  # pair.first
+            feature = tokens[i][1]  # pair.second
+            len_ = len(surface)
+
+            lattice.set_boundary_constraint(
+                pos, BoundaryConstraintType.MECAB_TOKEN_BOUNDARY)
+            lattice.set_boundary_constraint(
+                pos + len_, BoundaryConstraintType.MECAB_TOKEN_BOUNDARY)
+
+            if feature:
+                lattice.set_feature_constraint(pos, pos + len_, feature)
+
+                for n in range(len_):
+                    lattice.set_boundary_constraint(
+                        pos + n, BoundaryConstraintType.MECAB_INSIDE_TOKEN)
+
+            pos += len_
+
+        return True
+
+    def init_n_best(self, lattice: Lattice):
+        if not lattice.has_request_type(RequestType.MECAB_NBEST):
+            return True
+
+        lattice.allocator().nbest_generator().set(lattice.eos_node())
+        return True
+
+    def build_best_lattice(self, lattice: Lattice):
+        node = lattice.eos_node()
+        while node.prev:
+            node.is_best = 1
+            prev_node = node.prev
+            prev_node.next = node
+            node = prev_node
+
+        return True
+
+    def build_all_lattice(self, lattice: Lattice):
+        return lattice.buildAllLattice(lattice)
+
+    def build_alternative(self, lattice: Lattice):
+        # cout으로 terminal에 출력하는 기능만 포함되어 있음.
+        # 굳이 구현할 필요 없을듯?
+        pass
