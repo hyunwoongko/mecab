@@ -1,4 +1,4 @@
-from typing import IO
+from typing import IO, Union
 
 import numpy as np
 
@@ -10,22 +10,23 @@ class Mmap:
     filename: str
     flag: str
     fd: IO
-    text: any
+    text: Union[str, bytes]
     length: int
 
     def __init__(self):
-        self.text = None
+        self.text = ''
         self.length = 0
-        self.fd = IO()
+        self.fd = None
 
-    def begin(self):
-        return self.text
+    # 주소값에 대한 함수.
+    # def begin(self):
+    #     return 0
+    #
+    # def end(self):
+    #     return self.size()
 
-    def end(self):
-        return self.text + self.size()
-
-    def size(self) -> np.uintc:
-        return np.uintc(self.length // len(self.text))
+    def size(self):
+        return self.length
 
     def file_name(self):
         return self.filename
@@ -37,20 +38,35 @@ class Mmap:
         return self.length == 0
 
     def open(self, filename: str, mode: str = 'r'):
+        """Open file
+
+        Args:
+            filename (str): filename with path
+            mode (str): flag for file open
+
+        Returns:
+            bool: Whether the file is open or not
+        """
         self.close()
 
         self.filename = filename
         self.flag = mode
 
-        CHECK_FALSE(self.flag in ("r", "r+"), f"unknown open mode: {self.filename} mode: {self.flag}")
-        self.flag += 'b'
-        """
-        CHECK_FALSE((fd = ::fopen(filename, flag.c_str())) != NULL) << "open failed: " << filename;
-        CHECK_FALSE((fileDescriptor = ::fileno(fd)) >= 0) << "cannot get file descriptor: " << filename;
-        CHECK_FALSE(::fstat(fileDescriptor, &st) >= 0) << "failed to get file size: " << filename;
-        """
+        # CHECK_FALSE(self.flag in allow_flags, f"unknown open mode: {self.filename} mode: {self.flag}")
+        allow_flags = ("r", "r+")
+        if self.flag in allow_flags:
+            self.flag += 'b'
+        else:
+            print(f"unknown open mode: {self.filename} mode: {self.flag}")
+            return False
+
         if os.path.isfile(self.filename):
-            pass
+            """
+            CHECK_FALSE((fd = ::fopen(filename, flag.c_str())) != NULL) << "open failed: " << filename;
+            CHECK_FALSE((fileDescriptor = ::fileno(fd)) >= 0) << "cannot get file descriptor: " << filename;
+            CHECK_FALSE(::fstat(fileDescriptor, &st) >= 0) << "failed to get file size: " << filename;
+            """
+
             # Open file and get file size
             self.fd = open(self.filename, self.flag)
             file_descriptor = self.fd.fileno()
@@ -71,11 +87,12 @@ class Mmap:
             self.fd = None
 
         if self.text:
-            if "r+b".startswith(self.flag) and os.path.isfile(self.filename):
+            if self.flag > "r+b":
                 with open(self.filename, 'wb') as file:
                     file.write(self.text)
 
-        self.text = 0
+        self.text = ''
+        self.length = 0
 
     def __del__(self):
         self.close()
