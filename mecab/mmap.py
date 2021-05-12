@@ -18,12 +18,11 @@ class Mmap:
         self.length = 0
         self.fd = None
 
-    # 주소값에 대한 함수.
-    # def begin(self):
-    #     return 0
-    #
-    # def end(self):
-    #     return self.size()
+    def begin(self):
+        return 0
+
+    def end(self):
+        return self.size()
 
     def size(self):
         return self.length
