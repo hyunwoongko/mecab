@@ -46,7 +46,7 @@ class Allocator:
 
     def mutable_results(self) -> list:
         """[summary]
-        
+            ...
         Returns:
             [list]: [description]
         """
