@@ -95,3 +95,6 @@ class Mmap:
 
     def __del__(self):
         self.close()
+
+    def __getitem__(self, index):
+        return self.text[index]
