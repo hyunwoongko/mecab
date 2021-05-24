@@ -1,24 +1,24 @@
 import numpy as np
 
 from mecab.common import *
-from mecab.utils.string_utils import itoa, uitoa, dtoa
+# from mecab.utils.string_utils import itoa, uitoa, dtoa
 
 DEFAULT_ALLOC_SIZE = BUF_SIZE
 
 
-def _ITOA(n):
-    fbuf = itoa(n)
-    return write(fbuf)
-
-
-def _UITOA(n):
-    fbuf = uitoa(n)
-    return write(fbuf)
-
-
-def _DTOA(n):
-    fbuf = dtoa(n)
-    return write(fbuf)
+# def _ITOA(n):
+#     fbuf = itoa(n)
+#     return StringBuffer().write(fbuf)
+#
+#
+# def _UITOA(n):
+#     fbuf = uitoa(n)
+#     return StringBuffer().write(fbuf)
+#
+#
+# def _DTOA(n):
+#     fbuf = dtoa(n)
+#     return StringBuffer().write(fbuf)
 
 
 class StringBuffer:
@@ -59,12 +59,21 @@ class StringBuffer:
 
         return True
 
-    def write(self, string: str, length: int = 1):
+    def write(self, string: str, length: int = None):
+        if length is None:
+            length = len(string)
+
         if self.reserve(length):
             self.ptr_ = f'{self.ptr_[:self.size_]}{string[:length]}{self.ptr_[self.size_ + length:]}'
             self.size_ += length
 
         return self
+
+    def __lshift__(self, other):
+        if not isinstance(other, str):
+            other = str(other)
+
+        return self.write(other, len(other))
 
     def clear(self):
         self.size_ = 0
