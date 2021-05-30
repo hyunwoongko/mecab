@@ -7,7 +7,9 @@ PROJECT( ${proj_name} )
 SET(CMAKE_CXX_STANDARD 14)
 
 set(TEST_CODE
-      tests/test_darts.cc)
+      tests/test_darts.cc
+      tests/test_string_utils.cc
+      )
 
 add_subdirectory(./googletest)
 
