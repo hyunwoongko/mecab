@@ -2,7 +2,7 @@ import mecab.common
 import mecab.utils.string_utils
 
 
-def decodeCharsetForIconv(str):
+def decode_charset_for_iconv(str):
     charset = mecab.utils.string_utils.decode_charset(str)
 
     mapper = {mecab.utils.string_utils.EncodingType.UTF8: "UTF-8",
@@ -18,20 +18,21 @@ def decodeCharsetForIconv(str):
 
 
 class Iconv:
-    __from = ''
-    __to = ''
 
-    def open(self, _from, to):
-        self.__from = decodeCharsetForIconv(_from)
-        self.__to = decodeCharsetForIconv(to)
+    def __init__(self):
+        self._from = ''
+        self._to = ''
 
+    def open(self, _from, _to):
+        self._from = decode_charset_for_iconv(_from)
+        self._to = decode_charset_for_iconv(_to)
         return True
 
     def convert(self, string):
         if not string:
-            return {True, ''}
+            return ''
 
-        if self.__from == '' or self.__to == '':
-            return {True, ''}
+        if self._from == '' or self._to == '':
+            return ''
 
-        return {True, string.decode(self.__from).encode(self.__to)}
+        return string.decode(self._from).encode(self._to)
