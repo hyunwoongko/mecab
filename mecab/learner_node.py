@@ -35,7 +35,7 @@ class LearnerNode:
     anext: LearnerNode
 
     surface: str
-    features: str
+    feature: str
 
     id: int
     length: int
@@ -51,6 +51,7 @@ class LearnerNode:
     wcost2: int
     cost: float
     fvector: List[int]
+    token: mecab_token_t
 
 
 def repeat_find_if(target: str, delimiter: str, n: int) -> str:
