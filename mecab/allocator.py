@@ -12,37 +12,37 @@ class Allocator:
         self.type_p = typeP
 
         # member
-        self.id_ = 0
-        self.node_freelist_ = ScopedPtr(FreeList(type_=typeN, size=NODE_FREELIST_SIZE))
-        self.path_freelist_ = ScopedPtr(FreeList(type_=typeP, size=0))
-        self.char_freelist_ = ScopedPtr(ChunkFreeList(type_=str, size=0))
+        self.__id_ = 0
+        self.__node_freelist_ = ScopedPtr(FreeList(type_=typeN, size=NODE_FREELIST_SIZE))
+        self.__path_freelist_ = ScopedPtr(FreeList(type_=typeP, size=0))
+        self.__char_freelist_ = ScopedPtr(ChunkFreeList(type_=str, size=0))
         self.nbest_generator_ = ScopedPtr(NBestGenerator())
         self.results_ = ScopedArray(type_=str, size=self.kResultsSize)
         # self.results_ = ScopedArray()
 
     def newNode(self):
         """[summary]
-            add an element to node_freelist_
-            then increase id_
+            add an element to __node_freelist_
+            then increase __id_
         
         Returns:
             [typeN]: [description]
         """
-        self.node_freelist_.data.alloc()
-        self.id_ = self.id_ + 1
-        return self.node_freelist_.data
+        self.__node_freelist_.data.alloc()
+        self.__id_ = self.__id_ + 1
+        return self.__node_freelist_.data
 
     def newPath(self):
         """[summary]
-            add an element to path_freelist_
+            add an element to __path_freelist_
         
         Returns:
             [typeP]: [description]
         """
-        if self.path_freelist_.get() != None:
-            self.path_freelist_.reset(FreeList(type_=self.type_p, size=PATH_FREELIST_SIZE))
-        self.path_freelist_.data.alloc()
-        return self.path_freelist_.data
+        if self.__path_freelist_.get() != None:
+            self.__path_freelist_.reset(FreeList(type_=self.type_p, size=PATH_FREELIST_SIZE))
+        self.__path_freelist_.data.alloc()
+        return self.__path_freelist_.data
 
     def mutable_results(self) -> list:
         """[summary]
@@ -53,10 +53,10 @@ class Allocator:
         return self.results_.get()
 
     def alloc(self, size: int) -> list:
-        if self.char_freelist_.get() != None:
-            self.char_freelist_.reset(ChunkFreeList(type_=str, size=BUF_SIZE))
-        self.char_freelist_.data.alloc(size + 1)
-        return self.char_freelist_.data
+        if self.__char_freelist_.get() != None:
+            self.__char_freelist_.reset(ChunkFreeList(type_=str, size=BUF_SIZE))
+        self.__char_freelist_.data.alloc(size + 1)
+        return self.__char_freelist_.data
     
     # python에서는 size의 의미가 필요한가 싶네요.
     def strdup(self, str_: str, size: int) -> str:
@@ -79,24 +79,24 @@ class Allocator:
         return self.kResultsSize
 
     def free(self):
-        self.id_ = 0
-        self.node_freelist_.data.free()
-        if self.path_freelist_.get() != None:
-            # self._path_freelist_.get() 부분에 데이터가 제대로 확인 안됨.
-            self.path_freelist_.data.free()
-        if self.char_freelist_.get() != None:
-            # self._char_freelist_.get() 부분에 데이터가 제대로 확인 안됨.
-            self.char_freelist_.data.free()
+        self.__id_ = 0
+        self.__node_freelist_.data.free()
+        if self.__path_freelist_.get() != None:
+            # self.___path_freelist_.get() 부분에 데이터가 제대로 확인 안됨.
+            self.__path_freelist_.data.free()
+        if self.__char_freelist_.get() != None:
+            # self.___char_freelist_.get() 부분에 데이터가 제대로 확인 안됨.
+            self.__char_freelist_.data.free()
     
     # only debugging
     def print_node_freelist(self):
-        print(self.node_freelist_.data)
+        print(self.__node_freelist_.data)
     
     def print_path_freelist(self):
-        print(self.path_freelist_.data)
+        print(self.__path_freelist_.data)
     
     def print_char_freelist(self):
-        print(self.char_freelist_.data)
+        print(self.__char_freelist_.data)
     
     def print_id(self):
-        print(self.id_)
+        print(self.__id_)
