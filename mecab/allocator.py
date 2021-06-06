@@ -7,14 +7,14 @@ class Allocator:
     kResultsSize = 512
     partial_buffer_ = []
 
-    def __init__(self, typeN: type, typeP: type):
-        self.type_n = typeN
-        self.type_p = typeP
+    def __init__(self, type_node: type, type_path: type):
+        self.type_n = type_node
+        self.type_p = type_path
 
         # member
         self.__id_ = 0
-        self.__node_freelist_ = ScopedPtr(FreeList(type_=typeN, size=NODE_FREELIST_SIZE))
-        self.__path_freelist_ = ScopedPtr(FreeList(type_=typeP, size=0))
+        self.__node_freelist_ = ScopedPtr(FreeList(type_=type_node, size=NODE_FREELIST_SIZE))
+        self.__path_freelist_ = ScopedPtr(FreeList(type_=type_path, size=0))
         self.__char_freelist_ = ScopedPtr(ChunkFreeList(type_=str, size=0))
         self.nbest_generator_ = ScopedPtr(NBestGenerator())
         self.results_ = ScopedArray(type_=str, size=self.kResultsSize)
@@ -26,7 +26,7 @@ class Allocator:
             then increase __id_
         
         Returns:
-            [typeN]: [description]
+            [type_node]: [description]
         """
         self.__node_freelist_.data.alloc()
         self.__id_ = self.__id_ + 1
@@ -37,7 +37,7 @@ class Allocator:
             add an element to __path_freelist_
         
         Returns:
-            [typeP]: [description]
+            [type_path]: [description]
         """
         if self.__path_freelist_.get() != None:
             self.__path_freelist_.reset(FreeList(type_=self.type_p, size=PATH_FREELIST_SIZE))
