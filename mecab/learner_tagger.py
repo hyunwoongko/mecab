@@ -410,4 +410,22 @@ class DecoderLearnerTagger(LearnerTagger):
             self.begin_data_.reset([None] * (16 * BUF_SIZE))
             self.begin_ = self.begin_data_.get()
 
-        # TODO: 더 구현해야함.
+        line = is_.readline()
+        # 이렇게 구현하는게 맞는지 모르겠음
+
+        if not line:
+            return False
+
+        self.begin_ = line
+        self.init_list()
+        self.build_lattice()
+        self.viterbi()
+
+        node = self.end_node_list_[0].next
+        while node.next:
+            os_.write(node.surface, node.length)
+            print("\t", node.feature, "\n")
+            node = node.next
+
+        os_.write("EOS\n")
+        return True
