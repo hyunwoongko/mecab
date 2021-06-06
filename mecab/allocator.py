@@ -69,11 +69,11 @@ class Allocator:
         return self.nbest_generator_.get()
     
     def partial_buffer(self, size: int) -> str:
-        if len(self._partial_buffer_) == 0:
-            self._partial_buffer_ = ['' for _ in range(size)]
+        if len(self.partial_buffer_) == 0:
+            self.partial_buffer_ = ['' for _ in range(size)]
         else:
-            self._partial_buffer_ = self._partial_buffer_[:(size + 1)]
-        return self._partial_buffer_[0]
+            self.partial_buffer_ = self.partial_buffer_[:(size + 1)]
+        return self.partial_buffer_[0]
     
     def results_size(self) -> int:
         return self.kResultsSize
