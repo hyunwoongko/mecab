@@ -3,7 +3,7 @@ import sys
 from typing import List, Tuple
 
 from mecab.common import CHECK_FALSE
-from mecab.data_structure import Node, RequestType, BoundaryConstraintType
+from mecab.data_structure import Node, RequestType, BoundaryConstraintType, NodeType
 from mecab.utils.scoped_ptr import ScopedArray
 from mecab.lattice import Lattice
 from mecab.utils import logsumexp
@@ -382,6 +382,22 @@ class Viterbi:
         return lattice.buildAllLattice(lattice)
 
     def build_alternative(self, lattice: Lattice):
-        # cout으로 terminal에 출력하는 기능만 포함되어 있음.
-        # 굳이 구현할 필요 없을듯?
-        pass
+        begin_node_list = lattice.begin_nodes()
+        bos_node = lattice.bos_node()
+        node = bos_node
+        while node:
+            if node.stat == NodeType.MECAB_BOS_NODE or node.stat == NodeType.MECAB_EOS_NODE:
+                continue
+
+            pos = node.surface - lattice.sentence() - node.rlength + node.length
+            print(node.surface, node.length, "\t", node.feature)
+            anode = begin_node_list[pos]
+            while anode:
+                if anode.rlength == node.rlength and anode.length == node.length:
+                    print("@ ", anode.surface, anode.length, "\t",
+                          anode.feature)
+                anode = anode.bnext
+            node = node.next
+
+        print("EOS")
+        return True
