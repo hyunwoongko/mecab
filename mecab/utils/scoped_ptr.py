@@ -20,57 +20,66 @@ class ScopedPtr:
     원본 scoped_ptr의 operator*()는 "ptr.get().data"와 동일하다
                      operator->()는 "ptr.get()."와 동일하다.
     """
-    __next = deque([], maxlen=1)
+    _next = deque([], maxlen=1)
 
     def __init__(self, data=None):
         self.data = data
 
     def reset(self, data=None) -> None:
         if self.data is not None:
-            raise Exception('Reset failed. This is not a pointer. Please delete the data.')
+            raise Exception(
+                'Reset failed. This is not a pointer. Please delete the data.')
 
-        self.__next.clear()
+        self._next.clear()
         if data is not None:
-            self.__next.append(data)
+            self._next.append(data)
 
     def get(self):
-        if len(self.__next) == 0:
+        if len(self._next) == 0:
             return None
 
-        return self.__next[0]
+        return self._next[0]
 
 
 class ScopedArray:
-    __array = []
+    _array = []
 
-    def __init__(self):
-        pass
+    def __init__(self, type_: type, size: int):
+        self.type = type_
+        self._array = [None for _ in range(size)]
 
     def append(self, data):
         if str(type(data)) != "<class 'mecab.utils.scoped_ptr.ScopedPtr'>":
             raise Exception('append failed. Please put only ScoredPtr type')
 
-        self.__array.append(data)
+        self._array.append(data)
 
     def get(self):
-        return self.__array
+        return self._array
+
+    def __getitem__(self, index):
+        return self._array[index]
 
 
 class ScopedFixedArray(UserList):
-    __size: int
+    _size: int
 
     def __init__(self, size: int):
-        self.__size = size
-        self.__array = [None] * size
+        super(ScopedFixedArray, self).__init__()
+        self._size = size
+        self._array = [None] * size
 
     def append(self, data):
         raise Exception(f"exceed the limit.[{self.n}]")
 
     def get(self):
-        return self.__array
+        return self._array
 
     def size(self):
-        return self.__size
+        return self._size
+
+    def __getitem__(self, index):
+        return self._array[index]
 
 
 class ScopedString(ScopedPtr):

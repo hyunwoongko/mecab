@@ -15,6 +15,7 @@ class FreeList(object):
         make list free.
         """
         self.pi_ = self.li_ = 0
+        self.free_list = []
 
     def alloc(self):
         """
@@ -28,9 +29,14 @@ class FreeList(object):
             self.free_list.append([self.type()] * self.size)
             # freeList.push_back(new T[size]);
 
-        obj = self.free_list[self.li_][self.pi_]
-        self.pi_ += 1
-        return obj
+        if len(self.free_list) == 0:
+            obj = self.free_list = [self.pi_]
+            self.pi_ += 1
+            return obj
+        else:
+            obj = self.free_list[self.li_] = self.free_list[self.li_] + self.pi_
+            self.pi_ += 1
+            return obj
         # return freeList[li_] + (pi_++);
 
     def __repr__(self):
@@ -51,6 +57,7 @@ class ChunkFreeList:
         make list free.
         """
         self.pi_ = self.li_ = 0
+        self.free_list = []
 
     def alloc(self, req=1):
         """
