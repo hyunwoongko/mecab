@@ -8,7 +8,7 @@ from mecab.common import CHECK_FALSE, CHECK_DIE
 def open_map(filename: str, cmap: dict, iconv: Iconv):
     lines = open(filename, mode="r", encoding="utf-8").read().splitlines()
     cmap.clear()  ##
-    col= ''
+    col = ''
     for line in lines:
         assert tokenize2(line," \t", col, 2) == 2, \
             f"format error: {line}"
@@ -38,58 +38,58 @@ def save_file(filename: str, cmap : dict):
 
 class ContextID:
     def __init__(self):
-        self.__left_ = {}
-        self.__right_ = {}
-        self.__left_bos_ = ""
-        self.__right_bos_ = ""
+        self._left_ = {}
+        self._right_ = {}
+        self._left_bos_ = ""
+        self._right_bos_ = ""
 
     def clear(self):
-        self.__left_.clear()
-        self.__right_.clear()
-        self.__left_bos_ = ""
-        self.__right_bos_ = ""
+        self._left_.clear()
+        self._right_.clear()
+        self._left_bos_ = ""
+        self._right_bos_ = ""
 
     def add(self, l: dict, r: dict):
         ## map key 중복 시 insert X
-        if l not in self.__left_:
-            self.__left_[l] = 1
-        if r not in self.__right_:
-            self.__right_[r] = 1
+        if l not in self._left_:
+            self._left_[l] = 1
+        if r not in self._right_:
+            self._right_[r] = 1
 
     def add_bos(self, l: str, r: str):
-        self.__left_bos_ = l
-        self.__right_bos_ = r
+        self._left_bos_ = l
+        self._right_bos_ = r
 
     def save(self, lfile: str, rfile: str) -> bool:
-        return save_file(lfile, self.__left_) and save_file(rfile, self.__right_)
+        return save_file(lfile, self._left_) and save_file(rfile, self._right_)
 
     def build(self) -> bool:
-        return build_bos(self.__left_, self.__left_bos_) and build_bos(self.__right_, self.__right_bos_)
+        return build_bos(self._left_, self._left_bos_) and build_bos(self._right_, self._right_bos_)
 
     def open(self, lfile: str, rfile: str, iconv: Iconv):
-        return open_map(lfile, self.__left_, iconv) and open_map(rfile, self.__right_, iconv)
+        return open_map(lfile, self._left_, iconv) and open_map(rfile, self._right_, iconv)
 
     def lid(self, l: str) -> int:
-        if l not in self.__left_:
+        if l not in self._left_:
             CHECK_DIE(False, f"cannot find LEFT-ID for {l}")
-        return self.__left_[l]
+        return self._left_[l]
 
     def rid(self, r: str) -> int:
-        if r not in self.__right_:
+        if r not in self._right_:
             CHECK_DIE(False, f"cannot find RIGHT-ID for {r}")
-        return self.__right_[r]
+        return self._right_[r]
 
     def left_size(self) -> int:
-        return len(self.__left_)
+        return len(self._left_)
 
     def right_size(self) -> int:
-        return len(self.__right_)
+        return len(self._right_)
 
     def left_ids(self):
-        return self.__left_
+        return self._left_
 
     def right_ids(self):
-        return self.__right_
+        return self._right_
 
     def is_valid(self, lid: int, rid: int) -> bool:
         return lid >= 0 and lid < self.left_size() and rid >= 0 and rid < self.right_size()
