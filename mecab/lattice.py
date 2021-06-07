@@ -1,5 +1,4 @@
-import numpy as np
-import mecab.allocator
+from mecab.allocator import Allocator
 from mecab.common import DEFAULT_THETA, MIN_INPUT_BUFFER_SIZE
 from mecab.utils.scoped_ptr import ScopedPtr
 from mecab.data_structure import Node, Path, RequestType
@@ -31,7 +30,7 @@ class Lattice:
         self.feature_constraint_.clear()
         self.boundary_constraint_.clear()
         self.size_ = 0
-        self.theta_ = common.DEFAULT_THETA
+        self.theta_ = DEFAULT_THETA
         self.Z_ = 0.0
         self.sentence_ = 0
 
@@ -44,7 +43,7 @@ class Lattice:
         return self.end_nodes_[0]
 
     # eos(end of sentence) 노드를 반환
-    def eos_nodes(self):
+    def eos_node(self):
         return self.begin_nodes_[self.size()]
 
     def begin_nodes(self):
@@ -95,7 +94,7 @@ class Lattice:
     def set_theta(self, theta: float):
         self.theta_ = theta
     
-    def next() -> bool:
+    def next(self) -> bool:
         if self.has_request_type(RequestType.MECAB_NBEST) != True:
             self.set_what("MECAB_NBEST request type is not set")
             return False
@@ -149,6 +148,7 @@ class Lattice:
         _str = self.allocator_.data.strdup(result, len(result))
         lines = []
         lsize = tokenize(_str, "\n", back_inserter(lines), len(result))
+        # ...
 
     def what(self) -> str:
         return self.what_
@@ -159,7 +159,7 @@ class Lattice:
     def create(self):
         return Lattice()
     
-    def buildAllLattice(self, lattice: Lattice) -> bool:
+    def buildAllLattice(self, lattice) -> bool:
         if lattice.has_request_type(RequestType.MECAB_ALL_MORPHS) != True:
             return True
         

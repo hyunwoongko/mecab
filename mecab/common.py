@@ -60,7 +60,7 @@ def CHECK_FALSE(
 
 def CHECK_DIE(
     condition: bool,
-    message: str,
+    message: str = "Check Die",
 ):
     """
     print message and exit program if condition is not satisfied.

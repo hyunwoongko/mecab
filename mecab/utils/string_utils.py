@@ -1,4 +1,6 @@
+import csv
 from enum import Enum
+from io import StringIO
 
 
 def dtoa(val):
@@ -97,6 +99,27 @@ def getEscapedChar(p):
 def tokenize(string, delimiter):
     return string.split(delimiter)
 
+def tokenize2(string, delimiter, size):
+    return [
+        elem
+        for elem in string.split(delimiter)
+        if len(elem) != 0
+    ][:size]
+
+def tokenizeCSV(string, delimiter, size):
+    f = StringIO(string)
+    reader = csv.reader(f, delimiter=delimiter)
+    res = []
+    for row in reader:
+        for elem in row:
+            if len(res) < size:
+                res.append(elem)
+            else:
+                break
+        if len(res) >= size:
+            break
+
+    return res
 
 def escape_csv_element(text):
     tmp = ""

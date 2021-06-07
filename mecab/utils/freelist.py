@@ -28,13 +28,12 @@ class FreeList(object):
         if self.li_ == len(self.free_list):
             self.free_list.append([self.type()] * self.size)
             # freeList.push_back(new T[size]);
-
+        
         if len(self.free_list) == 0:
-            obj = self.free_list = [self.pi_]
-            self.pi_ += 1
+            obj = self.free_list
             return obj
         else:
-            obj = self.free_list[self.li_] = self.free_list[self.li_] + self.pi_
+            obj = self.free_list[self.li_][self.pi_]
             self.pi_ += 1
             return obj
         # return freeList[li_] + (pi_++);
