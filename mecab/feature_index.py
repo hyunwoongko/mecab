@@ -66,17 +66,17 @@ class FeatureIndex(ABC):
     def set_alpha(self, alpha: float):
         self.alpha_ = alpha
 
-    def build_unigram_feature(self, path: LearnerPath, rfeature: str, lfeature: str):
+    def build_bigram_feature(self, path: LearnerPath, rfeature: str, lfeature: str):
         rbuf = rfeature if len(rfeature) <= BUFSIZE else rfeature[:BUFSIZE]
         lbuf = lfeature if len(lfeature) <= BUFSIZE else lfeature[:BUFSIZE]
 
-        R = [None for _ in range(POSSIZE)]
-        L = [None for _ in range(POSSIZE)]
         self.feature_.clear()
         
-        lsize = tokenizeCSV(lbuf, L, len(L))
-        rsize = tokenizeCSV(rbuf, R, len(R))
+        L = tokenizeCSV(lbuf, ',', POSSIZE)
+        R = tokenizeCSV(rbuf, ',', POSSIZE)
+        lsize, rsize = len(L), len(R)
 
+        goto = False
         for it in self.bigram_templs_:
             self.os_.clear()
             p = 0
@@ -90,12 +90,14 @@ class FeatureIndex(ABC):
                     if it[p] == 'L':
                         r, p = self.get_index(p, it, L, lsize)
                         if r == 0:
-                            pass # goto
+                            goto = True
+                            break # goto
                         self.os_ += r
                     elif it[p] == 'R':
                         r, p = self.get_index(p, it, R, rsize)
                         if r == 0:
-                            pass # goto
+                            goto = True
+                            break # goto
                         self.os_ += r
                     elif it[p] == 'l':
                         self.os_ += lfeature
@@ -107,17 +109,70 @@ class FeatureIndex(ABC):
                 else:
                     self.os_ += it[p]
                 p += 1
+            
+            if goto:
+                goto = False
+                continue
+
             self.os_ += '\0'
             # ADDB
             id_ = self.id(self.os_)
-            if id != -1:
+            if id_ != -1:
                 self.feature_.append(id)
         
         copy_feature(path.rnode.fvector, self.feature_freelist_)
         return True
 
-    def build_bigram_feature(self, ):
-        pass
+    def build_unigram_feature(self, path: LearnerPath, ufeature: str):
+        ubuf = ufeature if len(ufeature) <= BUFSIZE else ufeature[:BUFSIZE]
+        self.feature_.clear()
+
+        F = tokenizeCSV(ubuf, ',', POSSIZE)
+        usize = len(F)
+
+        goto = False
+        for it in self.unigram_templs_:
+            self.os_.clear()
+            p = 0
+            while True:
+                if it[p] == '\\':
+                    p = p + 1 # ++p
+                    self.os_ += getEscapedChar(it[p])
+                elif it[p] == '%':
+                    p = p + 1 # ++p
+
+                    if it[p] == 'F':
+                        r, p = self.get_index(p, it, F, usize)
+                        if r == 0:
+                            goto = True
+                            break # goto
+                        self.os_ += r
+                    elif it[p] == 't':
+                        self.os_ += path.rnode.char_type
+                    elif it[p] == 'u':
+                        self.os_ += ufeature
+                    elif it[p] == 'w':
+                        if path.rnodestat == MECAB_NOR_NODE:
+                            self.os_.wrte(path.rnode.surface, path.rnode.length)
+                    else:
+                        CHECK_DIE(False, "unknown meta char: " + it[p])
+
+                else:
+                    self.os_ += it[p]
+                p += 1
+            
+            if goto:
+                goto = False
+                continue
+
+            self.os_ += '\0'
+            # ADDB
+            id_ = self.id(self.os_)
+            if id_ != -1:
+                self.feature_.append(id)
+        
+        copy_feature(path.rnode.fvector, self.feature_freelist_)
+        return True
 
     def calc_cost(self, path: LearnerPath = None, node: LearnerNode = None):
         if path != None:
@@ -146,15 +201,15 @@ class FeatureIndex(ABC):
             CHECK_DIE(False, "no such file or directory: ", txtfile)
         ifs = open(txtfile, 'r')
 
-        buf = ScopedFixedArray(BUFSIZE)
+        # buf = ScopedFixedArray(BUFSIZE)
         column = ['' for _ in range(4)]
         dic = [] # List[tuple(int, float)]
         model_charset = ''
         for line in ifs.readlines():
             if len(line) == 0: break
 
-            CHECK_DIE(tokenize2(line, ":", column, 2), "format error: ", line)
-            if column[0]:
+            CHECK_DIE(len(tokenize2(line, ":", 2)) == 2, "format error: ", line)
+            if column[0] == 'charset':
                 model_charset = column[1] + 1
 
         from_ = param.get("dictionary-charset")
@@ -181,17 +236,19 @@ class FeatureIndex(ABC):
             alpha = float(column[0])
             dic.append((fp, alpha))
 
-        output_list = []
+        output = []
         # output.clear()
         size = len(dic)
-        
-        #   unsigned int size = static_cast<unsigned int>(dic.size());
-        # output->append(reinterpret_cast<const char*>(&size), sizeof(size));
+        output.append(size)
         
         charset_buf = str(to_) if len(to_) < 32 else str(to_)[:31]
+        output.append(charset_buf)
+
         dic = sorted(dic)
 
-        
+        alphas, fps = zip(*dic)
+        output = output + alphas + fps
+
         return True
 
     def compile(self, param: Param, txtfile: str, binfile: str):
