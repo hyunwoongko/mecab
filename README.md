@@ -27,6 +27,7 @@
 ## Reference
 - [mecab](https://github.com/taku910/mecab) by Kudo Taku
 - [python-mecab](https://github.com/jeongukjae/python-mecab) by Ukjae Jeong
+- [mecab-document](https://taku910.github.io/mecab/doxygen/annotated.html)
 
 <br>
 
