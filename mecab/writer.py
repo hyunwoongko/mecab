@@ -1,7 +1,9 @@
+from typing import Union
+
 from mecab.common import CHECK_FALSE, BUF_SIZE
 from mecab.data_structure import Node, NodeType
-from mecab.utils.param import Param
 from mecab.lattice import Lattice
+from mecab.utils.param import Param
 from mecab.utils.scoped_ptr import *
 from mecab.utils.string_buffer import StringBuffer
 
@@ -97,11 +99,44 @@ class Writer:
     def close(self):
         self.write_ = self.write_lattice
 
-    def stringify_lattice(self, lattice: Lattice, node: Node = None, buf: str = None, size: int= None):
+    def stringify_lattice(self, lattice: Lattice, *args: Union[Node, str, int]):
+        """
+            Args:
+                lattice (Lattice): language code
+                args (tuple):
+                    node (Node)
+                    buf (str)
+                    size (int)
 
-        return self.stringify_lattice_internal(lattice, self.get_stream())
+            Returns:
+                bool: Whether the file is open or not
+            node: Node = None, buf: str = None, size: int = None
+        """
+        args_len = len(args)
+        assert 0 <= args_len <= 3, ''
 
-    def write_node(self, lattice: Lattice, node: Node, os: StringBuffer, p: str = None):
+        if len(args) == 0:
+            return self.stringify_lattice_internal(lattice, self.get_stream())
+        elif len(args) == 1:
+            node: Node = args[0]
+            return self.stringify_lattice_internal_with_node(lattice, node, self.get_stream())
+        elif len(args) == 2:
+            buf: str = args[0]
+            size: int = args[1]
+            os: StringBuffer = StringBuffer(buf, size)
+            return self.stringify_lattice_internal(lattice, os)
+        elif len(args) == 3:
+            node: Node = args[0]
+            buf: str = args[1]
+            size: int = args[2]
+            os: StringBuffer = StringBuffer(buf, size)
+            return self.stringify_lattice_internal_with_node(lattice, node, os)
+
+    def stringify_lattice_nbest(self, lattice: Lattice, N: int, buf: str = None, size: int = None):
+        os = StringBuffer(buf, size) if buf is not None and size is not None else self.get_stream()
+        return self.stringify_lattice_nbest_internal(lattice, N, os)
+
+    def write_node(self, lattice: Lattice, p: str, node: Node, os: StringBuffer):
         if p is None:
             node_type_dict = {
                 NodeType.MECAB_BOS_NODE: self.bos_format_,
@@ -317,21 +352,10 @@ class Writer:
     def get_stream(self) -> StringBuffer:
         return self.temp_buffer.get()
 
-    def stringify_lattice_internal(self, lattice: Lattice, os: StringBuffer, **kwargs):
+    def stringify_lattice_internal(self, lattice: Lattice, os: StringBuffer):
         os.clear()
-
-        if 'node' in kwargs.keys():
-            node = kwargs.get('node')
-            if not node:
-                lattice.set_what("node is None")
-                return 0
-
-            if not self.write_node(lattice, node, os):
-                return 0
-
-        else:
-            if not self.write_(lattice, os):
-                return 0
+        if not self.write_(lattice, os):
+            return 0
 
         os << '\0'
         if not os.str():
@@ -340,43 +364,111 @@ class Writer:
 
         return os.str()
 
-    # def stringify_lattice_internal(self, lattice: Lattice, os: StringBuffer):
-    #     os.clear()
-    #     print('2')
-    #     if not self.write_(lattice, os):
-    #         return 0
-    #
-    #     os << '\0'
-    #     if not os.str():
-    #         lattice.set_what("output buffer overflow")
-    #         return 0
-    #
-    #     return os.str()
+    def stringify_lattice_internal_with_node(self, lattice: Lattice, node: Node, os: StringBuffer):
+        os.clear()
+        if not node:
+            lattice.set_what("node is None")
+            return 0
 
-    def write_lattice(self, lattice: Lattice, os):
-        while True:
-            node = lattice.next()
-            if node is False:
-                break
+        if not self.write_node(lattice, node, os):
+            return 0
 
-            # os.write(node.surface, node.langth)
+        os << '\0'
+        if not os.str():
+            lattice.set_what("output buffer overflow")
+            return 0
 
-    def write_wakati(self, lattice: Lattice, os):
+        return os.str()
+
+    def stringify_lattice_nbest_internal(self, lattice: Lattice, N: int, os: StringBuffer):
         pass
 
-    def write_none(self, lattice: Lattice, os):
+    def write_lattice(self, lattice: Lattice, os: StringBuffer):
+        for node in lattice.bos_nodes():
+            os.write(node.surface, node.length)
+            os << '\t' << node.feature
+            os << '\n'
+
+        os << "EOS\n"
         return True
 
-    def write_user(self, lattice: Lattice, os):
-        pass
+    def write_wakati(self, lattice: Lattice, os: StringBuffer):
+        for node in lattice.bos_nodes():
+            os.write(node.surface, node.length)
+            os << ' '
 
-    def write_dump(self, lattice: Lattice, os):
-        pass
+        os << "\n"
+        return True
 
-    def write_em(self, lattice: Lattice, os):
-        pass
+    def write_none(self, lattice: Lattice, os: StringBuffer):
+        return True
 
+    def write_user(self, lattice: Lattice, os: StringBuffer):
+        if not self.write_node(lattice, self.bos_format_.get(), lattice.bos_nodes(), os):
+            return False
 
+        node = None
+        nodes = lattice.bos_nodes()
+        for index in range(len(nodes)):
+            node = nodes[index]
+            fmt = self.unk_format_.get() if node.stat == NodeType.MECAB_UNK_NODE else self.node_format_.get()
+            if not self.write_node(lattice, fmt, node, os):
+                return False
 
-if __name__ == '__main__':
-    Writer().stringify_lattice_internal(None, None, None)
+        if not self.write_node(lattice, self.eos_format_.get(), node, os):
+            return False
+
+        return True
+
+    def write_dump(self, lattice: Lattice, os: StringBuffer):
+        string = lattice.sentence()
+        for node in lattice.bos_nodes():
+            os << node.id << ' '
+            if node.stat == NodeType.MECAB_BOS_NODE:
+                os << "BOS"
+            elif node.stat == NodeType.MECAB_EOS_NODE:
+                os << "EOS"
+            else:
+                os.write(node.surface, node.length)
+
+            # TODO:: 테스트하는 과정에서 python에 맞게 수정 필요
+            os << ' ' << node.feature << ' ' << int(node.surface - string) << ' ' \
+            << int(node.surface - string + node.length) << ' ' << node.rcAttr << ' ' << node.lcAttr << ' ' \
+            << node.posid << ' ' << int(node.char_type) << ' ' << int(node.stat) << ' ' \
+            << int(node.isbest) << ' ' << node.alpha << ' ' << node.beta << ' ' << node.prob << ' ' << node.cost
+
+            path = node.lpath
+            while path:
+                os << ' ' << path.lnode.id << ':' << path.cost << ':' << path.prob
+                path = path.lnext
+
+            os << '\n'
+
+        return True
+
+    def write_em(self, lattice: Lattice, os: StringBuffer):
+        min_prob = 0.0001
+        node: Node = lattice.bos_nodes()
+        while node:
+            if node.prob >= min_prob:
+                os << 'U\t'
+                if node.stat == NodeType.MECAB_BOS_NODE:
+                    os << "BOS"
+                elif node.stat == NodeType.MECAB_EOS_NODE:
+                    os << "EOS"
+                else:
+                    os.write(node.surface, node.length)
+
+                os << '\t' << node.feature << '\t' << node.prob << '\n'
+
+            path = node.lpath
+            while path:
+                if path.prob >= min_prob :
+                    os << 'B\t' << path.lnode.feature << '\t' << node.feature << '\t' << path.prob << '\n'
+
+                path = path.lnext
+
+            node = node.next
+
+        os << "EOS\n"
+        return True
