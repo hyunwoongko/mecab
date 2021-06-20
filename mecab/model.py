@@ -1,35 +1,18 @@
-"""
-## issue (해결 못한 부분들)
-
-(중요) 1. overloading 어떻게 할 건지?
-- open 함수
-- create 함수
-
-(중요) 2. mecab_options 구현
-
-3. 같은 변수에 대해 public, private 둘다 있는 부분??
-
-4. 클래스 변수명 뒤에 _ 부분은 빼는 게 맞는지?
-
-(중요) 5. mutex 부분 구현 맞는지?
-
-"""
-
-
 import logging
-from typing import Type, List
-from threading import Thread
-from threading import Lock
+from typing import List
+from threading import Lock, Thread
+
+from multipledispatch import dispatch
 
 from mecab.common import CHECK_FALSE
-from mecab.writer import Writer
 from mecab.data_structure import Node, RequestType, DictionaryInfo
-from mecab.viterbi import Viterbi
-from mecab.utils.scoped_ptr import ScopedPtr
-from mecab.utils.param import Param
-from mecab.utils.io import load_dictionary_resource
-from mecab.model import Model
 from mecab.lattice import Lattice
+from mecab.model import Model
+from mecab.utils.io import load_dictionary_resource
+from mecab.utils.param import Param, Option
+from mecab.utils.scoped_ptr import ScopedPtr
+from mecab.viterbi import Viterbi
+from mecab.writer import Writer
 
 logger = logging.getLogger(__file__)
 
@@ -52,53 +35,51 @@ def get_request_type(allocate_sentence: bool, partial: bool, all_morphs: bool, m
 
     return request_type
 
-### mecab options ?? 구현 how??
-mecab_options = []
-"""
-const std::vector<MeCab::Option> mecab_options{
-    {"rcfile", 'r', "", "FILE", "use FILE as resource file"},
-    {"dicdir", 'd', "", "DIR", "set DIR  as a system dicdir"},
-    {"userdic", 'u', "", "FILE", "use FILE as a user dictionary"},
-    {"lattice-level", 'l', "0", "INT", "lattice information level (DEPRECATED)"},
-    {"dictionary-info", 'D', "", "", "show dictionary information and exit"},
-    {"output-format-type", 'O', "", "TYPE", "set output format type (wakati,none,...)"},
-    {"all-morphs", 'a', "", "", "output all morphs(default false)"},
-    {"nbest", 'N', "1", "INT", "output N best results (default 1)"},
-    {"partial", 'p', "", "", "partial parsing mode (default false)"},
-    {"marginal", 'm', "", "", "output marginal probability (default false)"},
-    {"max-grouping-size", 'M', "24", "INT", "maximum grouping size for unknown words (default 24)"},
-    {"node-format", 'F', "%m\\t%H\\n", "STR", "use STR as the user-defined node format"},
-    {"unk-format", 'U', "%m\\t%H\\n", "STR", "use STR as the user-defined unknown node format"},
-    {"bos-format", 'B', "", "STR", "use STR as the user-defined beginning-of-sentence format"},
-    {"eos-format", 'E', "EOS\\n", "STR", "use STR as the user-defined end-of-sentence format"},
-    {"eon-format", 'S', "", "STR", "use STR as the user-defined end-of-NBest format"},
-    {"unk-feature", 'x', "", "STR", "use STR as the feature for unknown word"},
-    {"input-buffer-size", 'b', "", "INT", "set input buffer size (default 8192)"},
-    {"dump-config", 'P', "", "", "dump MeCab parameters"},
-    {"allocate-sentence", 'C', "", "", "allocate new memory for input sentence"},
-    {"theta", 't', "0.75", "FLOAT", "set temparature parameter theta (default 0.75)"},
-    {"cost-factor", 'c', "700", "INT", "set cost factor (default 700)"},
-    {"output", 'o', "", "FILE", "set the output file name"}};
-
-"""
+mecab_options = [
+    Option("rcfile", 'r', "", "FILE", "use FILE as resource file"),
+    Option("dicdir", 'd', "", "DIR", "set DIR  as a system dicdir"),
+    Option("userdic", 'u', "", "FILE", "use FILE as a user dictionary"),
+    Option("lattice-level", 'l', "0", "INT", "lattice information level (DEPRECATED)"),
+    Option("dictionary-info", 'D', "", "", "show dictionary information and exit"),
+    Option("output-format-type", 'O', "", "TYPE", "set output format type (wakati,none,...)"),
+    Option("all-morphs", 'a', "", "", "output all morphs(default false)"),
+    Option("nbest", 'N', "1", "INT", "output N best results (default 1)"),
+    Option("partial", 'p', "", "", "partial parsing mode (default false)"),
+    Option("marginal", 'm', "", "", "output marginal probability (default false)"),
+    Option("max-grouping-size", 'M', "24", "INT", "maximum grouping size for unknown words (default 24)"),
+    Option("node-format", 'F', "%m\\t%H\\n", "STR", "use STR as the user-defined node format"),
+    Option("unk-format", 'U', "%m\\t%H\\n", "STR", "use STR as the user-defined unknown node format"),
+    Option("bos-format", 'B', "", "STR", "use STR as the user-defined beginning-of-sentence format"),
+    Option("eos-format", 'E', "EOS\\n", "STR", "use STR as the user-defined end-of-sentence format"),
+    Option("eon-format", 'S', "", "STR", "use STR as the user-defined end-of-NBest format"),
+    Option("unk-feature", 'x', "", "STR", "use STR as the feature for unknown word"),
+    Option("input-buffer-size", 'b', "", "INT", "set input buffer size (default 8192)"),
+    Option("dump-config", 'P', "", "", "dump MeCab parameters"),
+    Option("allocate-sentence", 'C', "", "", "allocate new memory for input sentence"),
+    Option("theta", 't', "0.75", "FLOAT", "set temparature parameter theta (default 0.75)"),
+    Option("cost-factor", 'c', "700", "INT", "set cost factor (default 700)"),
+    Option("output", 'o', "", "FILE", "set the output file name")
+    ]
 
 class Model:
-    def __init__(self):
-        self.viterbi = Viterbi()
-        self.writer = Writer()
-        self.request_type = RequestType.MECAB_ONE_BEST
-        self.theta = 0.0
+    _viterbi_: Viterbi
+    _mutex_: Lock
+    _writer_: ScopedPtr
+    _request_type_: int
+    _theta_: float
 
-        self._writer = ScopedPtr(Writer())
+    def __init__(self):
+        self._viterbi_ = Viterbi()
+        self._writer_ = ScopedPtr(Writer())
+        self._request_type_ = RequestType.MECAB_ONE_BEST
+        self._theta_ = 0.0
         self.mutex = Lock()
-        self._request_type = None
-        self._theta = None
 
     def __del__(self):
-        self.viterbi.free()
-        self.viterbi = 0
+        self._viterbi_.free()
+        self._viterbi_ = 0
 
-    ## overloading
+    @dispatch(int, List[str])
     def open(self, argc: int, argv: List[str]) -> bool:
         param = Param()
         if ((not param.parse(argc, argv, mecab_options)) or (not load_dictionary_resource(param))):
@@ -106,6 +87,7 @@ class Model:
 
         return open(param)
 
+    @dispatch(str)
     def open(self, arg: str) -> bool:
         param = Param()
         if ((not param.parse(arg, mecab_options)) or (not load_dictionary_resource(param))):
@@ -113,12 +95,13 @@ class Model:
 
         return open(param)
 
+    @dispatch(Param)
     def open(self, param: Param) -> bool:
-        CHECK_FALSE(self.writer.open(param) and self.viterbi.open(param))
+        CHECK_FALSE(self._writer_.open(param) and self._viterbi_.open(param))
 
-        self.request_type = get_request_type(param.get("allocate-sentence"), param.get("partial"),
+        self._request_type_ = get_request_type(param.get("allocate-sentence"), param.get("partial"),
                                              param.get("all-morphs"), param.get("marginal"), param.get("nbest"))
-        self.theta = param.get("theta")
+        self._theta_ = param.get("theta")
 
         return self.is_available()
 
@@ -129,7 +112,7 @@ class Model:
         """
         return DictionaryInfo.VERSION  ## version of this dictionary
 
-    ## overloading
+    @dispatch(int, List[str])
     def create(self, argc: int, argv: List[str]) -> Model:
         """
         Factory method to create a new Model with a specified main's argc/argv-style parameters.
@@ -144,6 +127,7 @@ class Model:
             return 0
         return model
 
+    @dispatch(str)
     def create(self, arg: str) -> Param:
         """
         Factory method to create a new Model with a string parameter representation, i.e.,
@@ -158,6 +142,7 @@ class Model:
             return 0
         return model
 
+    @dispatch(Param)
     def create(self, param: Param) -> Model:
         model = Model()
         if not model.open(param):
@@ -170,14 +155,14 @@ class Model:
         Return DictionaryInfo linked list.
         @return DictionaryInfo linked list
         """
-        return self.viterbi.tokenizer_ if self.viterbi.tokenizer_.dictionary_info() else 0
+        return self._viterbi_.tokenizer_ if self._viterbi_.tokenizer_.dictionary_info() else 0
 
     def transition_cost(self, rcAttr: int, lcAttr: int) -> int:
         """
         Return transtion cost from rcAttr to lcAttr.
         @return transtion cost
         """
-        return self.viterbi.connector_().transition_cost(rcAttr, lcAttr)
+        return self._viterbi_.connector_().transition_cost(rcAttr, lcAttr)
 
     def lookup(self, begin: str, end: str, lattice: Lattice) -> Node:
         """
@@ -185,7 +170,7 @@ class Model:
         |lattice| takes the ownership of return value.
         @return node linked list.
         """
-        return self.viterbi.tokenizer_.lookup(begin, end, lattice.allocator(), lattice)
+        return self._viterbi_.tokenizer_.lookup(begin, end, lattice.allocator(), lattice)
 
     def create_lattice(self) -> Lattice:
         """
@@ -209,7 +194,7 @@ class Model:
         @return boolean
         @param model new model which is going to be swapped with the current model.
         """
-        model_data = ScopedPtr(model)
+        model_data = ScopedPtr(Model(model))  ##ScopedPtr 사용법 맞는지?
 
         if not self.is_available():
             logger.error("current model is not available")
@@ -224,35 +209,34 @@ class Model:
             logger.error("Passed model is not available")
             return False
 
-        current_viterbi = self.viterbi
+        current_viterbi = self._viterbi_
 
-        ## mutex 부분 구현 맞는지????
-        self.mutex.acquire()  # 락을 얻음
-        self.viterbi = m.take_viterbi()
-        self.request_type = m.request_type()
-        self.theta = m.theta()
-        self.mutex.release()  # 락을 해제함
+        self._mutex_.acquire()  # 락을 얻음
+        self._viterbi_ = m.take_viterbi()
+        self._request_type_ = m.request_type()
+        self._theta_ = m.theta()
+        self._mutex_.release()  # 락을 해제함
 
         current_viterbi.clear()
 
         return True
 
     def take_viterbi(self) -> Viterbi:
-        result = self.viterbi
-        self.viterbi = 0
+        result = self._viterbi_
+        self._viterbi_ = 0
         return result
 
     def is_available(self) -> bool:
-        return (self.viterbi and self.writer_get())
+        return (self._viterbi_ and self._writer_.get())
 
     def request_type(self) -> int:
-        return self.request_type
+        return self._request_type_
 
     def theta(self) -> float:
-        return self.theta
+        return self._theta_
 
     def viterbi(self) -> Viterbi:
-        return self.viterbi
+        return self._viterbi_
 
     def writer(self) -> Writer:
-        return self._writer.get()
+        return self._writer_.get()
