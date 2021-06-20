@@ -321,6 +321,20 @@ class FeatureIndex(ABC):
 
 
 class EncoderFeatureIndex(FeatureIndex):
+    def __init__(self):
+        super(self, FeatureIndex).__init__()
+        self.dic_ = {}
+        self.feature_cache_ = {}
+
+    def id_(self, key: str):
+        if key in self.dic_:
+            return self.dic_[key]
+        else:
+            self.dic_[key] = self.maxid_
+            self.maxid_ += 1
+            # return maxid_++
+            return self.maxid_ - 1
+
     def open(self, param: Param) -> bool:
         return self.open_template(param)
 
@@ -328,3 +342,91 @@ class EncoderFeatureIndex(FeatureIndex):
         self.dic_.clear()
         self.feature_cache_.clear()
         self.maxid_ = 0
+
+    def reopen(self, filename: str, dic_charset: str, alpha: List[float], param: Param):
+        self.close()
+        if not os.path.exists(filename):
+            return False
+
+        ifs = open(filename, 'r')
+
+        for buf in ifs.readlines():
+            if len(buf) == 0: break
+
+            column = tokenize2(buf, ':', 2)
+            CHECK_DIE(len(column) == 2, 'format error: ' + buf)
+            if column[0] == 'charset':
+                model_charset = column[1] + 1
+            else:
+                param.set(column[0], column[1])
+
+        CHECK_DIE(dic_charset)
+        CHECK_DIE(not len(model_charset) == 0, 'charset is empty')
+
+        iconv = Iconv()
+        CHECK_DIE(iconv.open(model_charset, dic_charset),
+        "cannot create model from=" + model_charset + " to=" + dic_charset)
+
+        alpha.clear()
+        CHECK_DIE(self.maxid_ == 0)
+        CHECK_DIE(self.dic_)
+        for buf in ifs.readlines():
+            column = tokenize2(buf, '\t', 2)
+            CHECK_DIE(len(column) == 2, 'format error: ' + buf)
+            feature = column[1]
+            CHECK_DIE(iconv.convert(feature))
+            self.dic_[feature] = self.maxid_
+            self.maxid_ = self.maxid_ + 1
+            alpha.append(float(column[0]))
+
+        return True
+
+    def save(self, filename: str, header: str) -> bool:
+        CHECK_DIE(header)
+        CHECK_DIE(self.alpha_)
+        try:
+            ofs = open(filename, 'wb')
+        except OSError:
+            return False
+        
+        ofs.write(header + '\n')
+
+        for k, v in self.dic_.items():
+            ofs.write(self.alpha_[v] + '\t' + k + '\n')
+
+        return True
+
+    def shrink(self, freq: int, observed: List[float]):
+        freqv = [0 for _ in range(self.maxid_)]
+
+        for k, v in self.feature_cache_.items():
+            while v[0] != -1:
+                freqv[v[0]] += v[1]
+
+        if freq <= 1: return
+
+        self.maxid_ = 0
+        old2new = {}
+
+        for i, v in enumerate(freqv):
+            if v >= freq:
+                old2new[i] = self.maxid_
+                self.maxid_ += 1
+
+        new_dic = {}
+        for k, v in self.dic_.items():
+            if k in old2new:
+                new_dic[k] = old2new[k]
+
+        # need pointer operation..
+        # TODO
+        # for k, v in self.feature_cache.items():
+        #     to = v[0]
+        #     while v[0] != -1:
+        #         if v[0] in old2new:
+        #             to = 
+
+    def clearcache(self):
+        self.feature_cache_.clear()
+        self.rewrite_.clear()
+            
