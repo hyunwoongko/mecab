@@ -64,7 +64,7 @@ class RewritePattern:
                     while char_index < len(self.dpat[i]):
                         character = self.dpat[i][char_index]
                         if '0' <= character <= '9':
-                            n = 10 * n + (character - '0')
+                            n = 10 * n + (int(character))
                             char_index += 1
                         else:
                             break
@@ -99,8 +99,6 @@ class RewriteRules(List[RewritePattern]):
     
     def append_rewrite_rule(self, s):
         col = tokenize2(s, " \t", 3)
-        print("s", s)
-        print("col", col, len(col), len(col) >= 2)
         CHECK_DIE(len(col) >= 2, f"format error: {col}")
 
         if len(col) >= 3:
@@ -144,7 +142,6 @@ class DictionaryRewriter:
                 elif line == "[right rewrite]":
                     append_to = 3
                 else:
-                    print(f"here{line}")
                     CHECK_DIE(append_to != 0, "no sections found")
 
                     if append_to == 1:
