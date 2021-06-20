@@ -1,5 +1,8 @@
+from typing import Dict
+from dataclasses import dataclass
 import logging
 from typing import List, Tuple
+import os
 
 from mecab.common import CHECK_DIE, BUF_SIZE
 from mecab.utils.string_utils import tokenize, tokenize2, tokenizeCSV, escape_csv_element
@@ -26,28 +29,28 @@ def match_rewrite_pattern(pattern, target):
 
 class RewritePattern:
 
-    def __init__():
-        spat: List[str] = []
-        dpat: List[str] = []
+    def __init__(self):
+        self.spat: List[str] = []
+        self.dpat: List[str] = []
 
     def set_pattern(self, src: str, dst: str):
         self.spat = []
         self.dpat = []
 
-        self.spat += tokenizeCSV(src)
-        self.dpat += tokenizeCSV(dst)
+        self.spat += tokenizeCSV(src, 512)
+        self.dpat += tokenizeCSV(dst, 512)
 
-        return len(self.spat) and len(self.dpat)
+        return len(self.spat) != 0 and len(self.dpat) != 0
     
     def rewrite(self, size: int, input_strings: List[str]) -> Tuple[str, bool]:
         output: List[str] = []
         if len(self.spat) > size:
             return "", False
-        
+
         for i in range(0, len(self.spat)):
+            
             if not match_rewrite_pattern(self.spat[i], input_strings[i]):
                 return "", False
-        
         
         for i in range(0, len(self.dpat)):
             char_index = 0
@@ -61,7 +64,7 @@ class RewritePattern:
                     while char_index < len(self.dpat[i]):
                         character = self.dpat[i][char_index]
                         if '0' <= character <= '9':
-                            n = 10 * n + (character - '0')
+                            n = 10 * n + (int(character))
                             char_index += 1
                         else:
                             break
@@ -78,22 +81,21 @@ class RewritePattern:
                     elem += character
                 
                 char_index += 1
-
-            CHECK_DIE(escape_csv_element(elem))
+            elem, is_success = escape_csv_element(elem)
+            CHECK_DIE(is_success)
             output.append(elem)
-    
+
         return ','.join(output), True
 
 
-# 작업중
 class RewriteRules(List[RewritePattern]):
     
     def rewrite(self, size, input_strings: List[str]):
         for i in range(len(self)):
-            output, is_success = self[i].rewrite(size, input)
+            output, is_success = self[i].rewrite(size, input_strings)
             if is_success:
                 return output, True
-        return False
+        return None, False
     
     def append_rewrite_rule(self, s):
         col = tokenize2(s, " \t", 3)
@@ -124,12 +126,12 @@ class DictionaryRewriter:
         self.cache: Dict[str, FeatureSet] = {}
     
     def open(self, filename, encoding='utf-8'):
-        CHECKDIE(os.path.exists(filename), f"no such file or directory: {filename}")
+        CHECK_DIE(os.path.exists(filename), f"no such file or directory: {filename}")
 
         append_to = 0
 
         with open(filename, 'r', encoding=encoding) as f:
-            for line in f.readlines():
+            for line in f.read().splitlines():
                 if len(line) == 0 or line[0] == '#':
                     continue
                 
@@ -154,9 +156,9 @@ class DictionaryRewriter:
         self.cache.clear()
     
     def rewrite(self, feature, feature_set: FeatureSet):
-        CHECKDIE(len(feature) < BUF_SIZE, "too long CSV entities")
-        col = tokenizeCSV(feature)
-        CHECKDIE(len(col) < BUF_SIZE, "too long CSV entities")
+        CHECK_DIE(len(feature) < BUF_SIZE, "too long CSV entities")
+        col = tokenizeCSV(feature, BUF_SIZE)
+        CHECK_DIE(len(col) < BUF_SIZE, "too long CSV entities")
 
         ufeature, u_success = self.unigram_rewrite.rewrite(len(col), col)
         lfeature, l_success = self.left_rewrite.rewrite(len(col), col)
@@ -209,9 +211,9 @@ class PosIDGenerator:
     def clear(self):
         self.rewrite.clear()
     
-    def feature_id(self, feature):
+    def id(self, feature):
         CHECK_DIE(len(feature) < BUF_SIZE - 1, "too long feature")
-        col = tokenizeCSV(feature)
+        col = tokenizeCSV(feature, BUF_SIZE)
         CHECK_DIE(len(col) < BUF_SIZE, "too long CSV entities")
 
         output, is_success = self.rewrite.rewrite(len(col), col)

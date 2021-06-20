@@ -1,3 +1,4 @@
+import re
 import csv
 from enum import Enum
 from io import StringIO
@@ -97,42 +98,36 @@ def getEscapedChar(p):
 
 
 def tokenize(string, delimiter):
-    return string.split(delimiter)
+    return re.split(f"[{delimiter}]", string)
 
 def tokenize2(string, delimiter, size):
     return [
         elem
-        for elem in string.split(delimiter)
+        for elem in re.split(f"[{delimiter}]", string)
         if len(elem) != 0
     ][:size]
 
-def tokenizeCSV(string, delimiter, size):
-    f = StringIO(string)
-    reader = csv.reader(f, delimiter=delimiter)
-    res = []
-    for row in reader:
-        for elem in row:
-            if len(res) < size:
-                res.append(elem)
-            else:
-                break
-        if len(res) >= size:
-            break
-
-    return res
+def tokenizeCSV(string, size):
+    size -= 1
+    if(size < 0):
+        size = 0
+    return re.split(f"[,]", string, maxsplit=size)
 
 def escape_csv_element(text):
-    tmp = ""
     if text.find(',') != -1 or text.find('"') != -1:
-        tmp = '\'"'
-
-        double_quotes_cnt = text.count('"')
-
-        tmp += '"' * double_quotes_cnt
-        tmp += '"' * len(text)
+        tmp = '\"'
+        
+        for character in text:
+            if character == '"':
+                tmp += '"'
+            tmp += character
+        
         tmp += '"'
+        return tmp, True
+    else:
+        return text, True
 
-    return tmp
+    
 
 
 bar = "###########################################"
