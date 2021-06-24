@@ -6,56 +6,51 @@ from mecab.common import *
 DEFAULT_ALLOC_SIZE = BUF_SIZE
 
 
-# def _ITOA(n):
-#     fbuf = itoa(n)
-#     return StringBuffer().write(fbuf)
-#
-#
-# def _UITOA(n):
-#     fbuf = uitoa(n)
-#     return StringBuffer().write(fbuf)
-#
-#
-# def _DTOA(n):
-#     fbuf = dtoa(n)
-#     return StringBuffer().write(fbuf)
-
-
 class StringBuffer:
-    size_: int
-    alloc_size_: int
-    ptr_: str
-    is_delete_: bool
-    error_: bool
+    _size: int  # 현재 문자열 사이즈
+    _alloc_size: int  # 메모리에 할당된 버퍼 사이즈
+    _ptr: str  # 문자열
+    _is_delete: bool
+    _error: bool
 
     def __init__(self, _s: str = '', _l: int = 0):
-        self.size_ = 0
-        self.alloc_size_ = _l
-        self.ptr_ = _s
-        self.is_delete_ = _s == '' and _l == 0
-        self.error_ = False
+        self._size = 0
+        self._alloc_size = _l
+        self._ptr = _s
+        self._is_delete = _s == '' and _l == 0
+        self._error = False
 
     def __del__(self):
-        if self.is_delete_:
-            self.ptr_ = ''
+        if self._is_delete:
+            self._ptr = ''
 
     def reserve(self, length: int):
-        if self.is_delete_ is False:
-            self.error_ = self.size_ + length >= self.alloc_size_
-            return not self.error_
+        """
+        reserve the buffer for write text
 
-        if self.size_ + length >= self.alloc_size_:
-            if self.alloc_size_ == 0:
-                self.alloc_size_ = DEFAULT_ALLOC_SIZE
-                self.ptr_ = ''
+        Args:
+            length (int): reservation length
 
-            len = self.size_ + length
+        Returns:
+            (bool) success of reservation
+        """
+
+        if self._is_delete is False:
+            self._error = self._size + length >= self._alloc_size
+            return not self._error
+
+        if self._size + length >= self._alloc_size:
+            if self._alloc_size == 0:
+                self._alloc_size = DEFAULT_ALLOC_SIZE
+                self._ptr = ''
+
+            len = self._size + length
             while True:
-                self.alloc_size_ *= 2
-                if len < self.alloc_size_:
+                self._alloc_size *= 2
+                if len < self._alloc_size:
                     break
 
-            self.ptr_ = self.ptr_[:self.size_]
+            self._ptr = self._ptr[:self._size]
 
         return True
 
@@ -64,8 +59,8 @@ class StringBuffer:
             length = len(string)
 
         if self.reserve(length):
-            self.ptr_ = f'{self.ptr_[:self.size_]}{string[:length]}{self.ptr_[self.size_ + length:]}'
-            self.size_ += length
+            self._ptr = f'{self._ptr[:self._size]}{string[:length]}{self._ptr[self._size + length:]}'
+            self._size += length
 
         return self
 
@@ -76,7 +71,8 @@ class StringBuffer:
         return self.write(other, len(other))
 
     def clear(self):
-        self.size_ = 0
+        self._size = 0
+        self._ptr = ''
 
     def str(self):
-        return 0 if self.error_ else self.ptr_
+        return 0 if self._error else self._ptr
