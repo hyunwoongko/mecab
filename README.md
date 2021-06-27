@@ -6,24 +6,6 @@
 
 <br>
 
-## Citation
-```
-@misc{pecab,
-  author       = {.... Work in process ....},
-  title        = {Pecab: Pure python mecab analyzer for Japanese and Korean},
-  howpublished = {\url{https://github.com/hyunwoongko/pecab}},
-  year         = {2021},
-}
-```
-
-<br>
-
-## Contributor
-.... Work in process ....
-
-
-<br>
-
 ## Reference
 - [mecab](https://github.com/taku910/mecab) by Kudo Taku
 - [python-mecab](https://github.com/jeongukjae/python-mecab) by Ukjae Jeong
